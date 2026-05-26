@@ -15,7 +15,15 @@ import unittest
 from pprint import pprint
 from unittest.mock import patch
 
-from app.bedrock import call_converse_api, compose_args_for_converse_api, get_model_id
+from app.bedrock import (
+    call_converse_api,
+    compose_args_for_converse_api,
+    generation_params_to_converse_configuration,
+    get_model_id,
+    is_temperature_supported,
+    is_top_k_supported,
+)
+from app.repositories.models.custom_bot import GenerationParamsModel
 from app.repositories.models.conversation import SimpleMessageModel, TextContentModel
 from app.repositories.models.custom_bot_guardrails import BedrockGuardrailsModel
 from app.routes.schemas.conversation import type_model_name
@@ -283,6 +291,124 @@ class TestCallConverseApiWithGuardrails(unittest.TestCase):
 
         response = call_converse_api(arg)
         pprint(response)
+
+
+class TestIsTopKSupported(unittest.TestCase):
+    """Claude Opus 4.7 deprecated top_k. Older Claude models still accept it.
+
+    Regression guard for: ValidationException ("`top_k` is deprecated for
+    this model") thrown by Bedrock when Opus 4.7 receives top_k in
+    additionalModelRequestFields.
+    """
+
+    def test_opus_4_7_does_not_support_top_k(self):
+        self.assertFalse(is_top_k_supported("claude-v4.7-opus"))
+
+    def test_opus_4_6_still_supports_top_k(self):
+        self.assertTrue(is_top_k_supported("claude-v4.6-opus"))
+
+    def test_sonnet_4_6_still_supports_top_k(self):
+        self.assertTrue(is_top_k_supported("claude-v4.6-sonnet"))
+
+    def test_haiku_4_5_still_supports_top_k(self):
+        self.assertTrue(is_top_k_supported("claude-v4.5-haiku"))
+
+
+class TestGenerationParamsConverseConfigTopK(unittest.TestCase):
+    """End-to-end check that top_k is stripped from the payload for Opus 4.7
+    in the non-reasoning code path (the path Bedrock Chat hits by default
+    when a user picks a model from the dropdown and asks a question).
+    """
+
+    def _params(self):
+        return GenerationParamsModel(
+            max_tokens=2000,
+            top_k=250,
+            top_p=0.999,
+            temperature=0.6,
+            stop_sequences=[],
+            reasoning_params=None,
+        )
+
+    def test_opus_4_7_omits_top_k_in_additional_fields(self):
+        cfg = generation_params_to_converse_configuration(
+            model="claude-v4.7-opus",
+            generation_params=self._params(),
+            enable_reasoning=False,
+        )
+        self.assertNotIn(
+            "top_k", cfg.get("additionalModelRequestFields", {})
+        )
+
+    def test_opus_4_6_keeps_top_k_in_additional_fields(self):
+        cfg = generation_params_to_converse_configuration(
+            model="claude-v4.6-opus",
+            generation_params=self._params(),
+            enable_reasoning=False,
+        )
+        self.assertEqual(
+            cfg["additionalModelRequestFields"]["top_k"], 250
+        )
+
+
+class TestIsTemperatureSupported(unittest.TestCase):
+    """Claude Opus 4.7 also deprecated user-controlled temperature.
+
+    Regression guard for: ValidationException ("`temperature` is deprecated
+    for this model") thrown by Bedrock when Opus 4.7 receives temperature
+    in inferenceConfig.
+    """
+
+    def test_opus_4_7_does_not_support_temperature(self):
+        self.assertFalse(is_temperature_supported("claude-v4.7-opus"))
+
+    def test_opus_4_6_still_supports_temperature(self):
+        self.assertTrue(is_temperature_supported("claude-v4.6-opus"))
+
+    def test_sonnet_4_6_still_supports_temperature(self):
+        self.assertTrue(is_temperature_supported("claude-v4.6-sonnet"))
+
+
+class TestGenerationParamsConverseConfigTemperature(unittest.TestCase):
+    """temperature must be absent from inferenceConfig for Opus 4.7 across
+    all three upstream code paths (non-reasoning, adaptive-thinking,
+    explicit-reasoning). The post-build cleanup is the single source of
+    truth for this guarantee.
+    """
+
+    def _params(self):
+        return GenerationParamsModel(
+            max_tokens=2000,
+            top_k=250,
+            top_p=0.999,
+            temperature=0.6,
+            stop_sequences=[],
+            reasoning_params=None,
+        )
+
+    def test_opus_4_7_omits_temperature_no_reasoning(self):
+        cfg = generation_params_to_converse_configuration(
+            model="claude-v4.7-opus",
+            generation_params=self._params(),
+            enable_reasoning=False,
+        )
+        self.assertNotIn("temperature", cfg["inferenceConfig"])
+
+    def test_opus_4_7_omits_temperature_with_adaptive_thinking(self):
+        cfg = generation_params_to_converse_configuration(
+            model="claude-v4.7-opus",
+            generation_params=self._params(),
+            enable_reasoning=True,
+        )
+        self.assertNotIn("temperature", cfg["inferenceConfig"])
+
+    def test_opus_4_6_keeps_temperature_no_reasoning(self):
+        cfg = generation_params_to_converse_configuration(
+            model="claude-v4.6-opus",
+            generation_params=self._params(),
+            enable_reasoning=False,
+        )
+        self.assertIn("temperature", cfg["inferenceConfig"])
 
 
 if __name__ == "__main__":

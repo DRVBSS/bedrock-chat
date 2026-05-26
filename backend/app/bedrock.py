@@ -590,6 +590,36 @@ def is_specify_both_temperature_and_top_p_supported(model: type_model_name) -> b
     ]
 
 
+def is_top_k_supported(model: type_model_name) -> bool:
+    """Claude Opus 4.7 deprecated top_k as an inference parameter — Bedrock
+    raises a ValidationException ("`top_k` is deprecated for this model")
+    when the field is present in additionalModelRequestFields.
+
+    Older Claude models (incl. 4.6 Opus/Sonnet, 4.5 Haiku) still accept
+    top_k, so we only opt out for models that actually reject it.
+    """
+    return model not in [
+        "claude-v4.7-opus",
+    ]
+
+
+def is_temperature_supported(model: type_model_name) -> bool:
+    """Claude Opus 4.7 deprecated user-controlled temperature — Bedrock
+    raises a ValidationException ("`temperature` is deprecated for this model")
+    whenever the field is present in inferenceConfig, including the
+    reasoning code paths that force temperature=1.0.
+
+    The adaptive-thinking architecture has the model control sampling
+    internally; client-supplied temperature is no longer honored.
+
+    Older Claude models still accept temperature, so we only opt out for
+    models that actually reject it.
+    """
+    return model not in [
+        "claude-v4.7-opus",
+    ]
+
+
 def is_prompt_caching_supported(
     model: type_model_name, target: Literal["system", "message", "tool"]
 ) -> bool:
@@ -1105,13 +1135,17 @@ def generation_params_to_converse_configuration(
                         else DEFAULT_GENERATION_CONFIG.get("stop_sequences", [])
                     ),
                 },
-                "additionalModelRequestFields": {
-                    "top_k": (
-                        generation_params.top_k
-                        if generation_params
-                        else DEFAULT_GENERATION_CONFIG["top_k"]
-                    ),
-                },
+                "additionalModelRequestFields": (
+                    {
+                        "top_k": (
+                            generation_params.top_k
+                            if generation_params
+                            else DEFAULT_GENERATION_CONFIG["top_k"]
+                        ),
+                    }
+                    if is_top_k_supported(model)
+                    else {}
+                ),
             }
 
     # "claude-v4.5-sonnet" cannot specify temperature and top_p together due to specifications.
@@ -1126,6 +1160,12 @@ def generation_params_to_converse_configuration(
             del inference_config["temperature"]
         else:
             inference_config.pop("topP", None)
+
+    # Claude Opus 4.7 deprecated user-controlled temperature entirely. Strip it
+    # from inferenceConfig regardless of which upstream branch built the config
+    # (non-reasoning, adaptive-thinking, or explicit-reasoning all set temperature).
+    if not is_temperature_supported(model):
+        converse_configuration["inferenceConfig"].pop("temperature", None)
 
     if guardrail and guardrail.guardrail_arn and guardrail.guardrail_version:
         converse_configuration["guardrailConfig"] = {
