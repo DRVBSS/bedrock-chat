@@ -3,6 +3,7 @@ import logging
 import os
 
 from app.routes.schemas.conversation import type_model_name
+from app.user import User
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -41,6 +42,27 @@ def get_global_available_models() -> list[str]:
 
     logger.info("No global available models configured - all models are available")
     return []
+
+
+def get_available_models_for_user(user: User | None) -> list[str]:
+    """Return the model allowlist for a user.
+
+    An empty list is the existing application convention for unrestricted model
+    access. Only authenticated administrators receive that unrestricted view;
+    all other callers receive the configured employee allowlist.
+    """
+    if user is not None and user.is_admin():
+        logger.info("Admin user has unrestricted model access")
+        return []
+
+    return get_global_available_models()
+
+
+def ensure_model_available_for_user(user: User, model: str) -> None:
+    """Reject attempts to use a model outside the user's server-side allowlist."""
+    available_models = get_available_models_for_user(user)
+    if available_models and model not in available_models:
+        raise PermissionError("The selected model is not available for this user.")
 
 
 def get_default_model() -> type_model_name:

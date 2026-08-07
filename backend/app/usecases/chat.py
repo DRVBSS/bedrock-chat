@@ -47,7 +47,7 @@ from app.routes.schemas.conversation import (
 )
 from app.stream import ConverseApiStreamHandler, OnStopInput, OnThinking
 from app.usecases.bot import fetch_bot, modify_bot_last_used_time, modify_bot_stats
-from app.usecases.global_config import get_title_model
+from app.usecases.global_config import ensure_model_available_for_user, get_title_model
 from app.user import User
 from app.utils import get_current_time
 from app.vector_search import (
@@ -217,6 +217,7 @@ def chat(
     on_tool_result: Callable[[ToolRunResult], None] | None = None,
     on_reasoning: Callable[[str], None] | None = None,
 ) -> tuple[ConversationModel, MessageModel]:
+    ensure_model_available_for_user(user, chat_input.message.model)
     user_msg_id, conversation, bot = prepare_conversation(user, chat_input)
     display_citation = bot is not None and bot.display_retrieved_chunks
 

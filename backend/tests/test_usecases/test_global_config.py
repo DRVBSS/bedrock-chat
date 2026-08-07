@@ -5,7 +5,15 @@ import unittest
 from unittest.mock import patch
 
 from app.usecases import global_config
-from app.usecases.global_config import get_global_available_models
+from app.usecases.global_config import (
+    ensure_model_available_for_user,
+    get_available_models_for_user,
+    get_global_available_models,
+)
+from tests.test_usecases.utils.user_factory import (
+    create_test_admin_user,
+    create_test_user,
+)
 
 
 class TestGetGlobalAvailableModels(unittest.TestCase):
@@ -84,6 +92,62 @@ class TestGetGlobalAvailableModels(unittest.TestCase):
         """Test that empty strings and null values are filtered out, keeping only valid models."""
         result = get_global_available_models()
         self.assertEqual(result, ["model1", "model2"])
+
+
+class TestGetAvailableModelsForUser(unittest.TestCase):
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_standard_user_receives_configured_allowlist(self):
+        result = get_available_models_for_user(create_test_user("employee"))
+        self.assertEqual(
+            result,
+            ["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"],
+        )
+
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_admin_user_has_unrestricted_access(self):
+        result = get_available_models_for_user(create_test_admin_user("dimitri"))
+        self.assertEqual(result, [])
+
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_missing_user_falls_back_to_configured_allowlist(self):
+        result = get_available_models_for_user(None)
+        self.assertEqual(
+            result,
+            ["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"],
+        )
+
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_standard_user_cannot_bypass_allowlist(self):
+        with self.assertRaises(PermissionError):
+            ensure_model_available_for_user(
+                create_test_user("employee"), "amazon-nova-pro"
+            )
+
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v4.7-opus", "claude-v4.6-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_admin_user_can_use_model_outside_allowlist(self):
+        ensure_model_available_for_user(
+            create_test_admin_user("dimitri"), "amazon-nova-pro"
+        )
 
     @patch("app.usecases.global_config.logger")
     @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", '["test-model"]')
