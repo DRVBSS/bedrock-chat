@@ -78,7 +78,13 @@
     "enableBotStore": true,
     "enableBotStoreReplicas": false,
     "botStoreLanguage": "en",
-    "globalAvailableModels": [],
+    "globalAvailableModels": [
+      "claude-v4.7-opus",
+      "claude-v4.6-sonnet",
+      "claude-v4.5-haiku"
+    ],
+    "defaultModel": "claude-v4.6-sonnet",
+    "titleModel": "claude-v4.5-haiku",
     "tokenValidMinutes": 30,
     "alternateDomainName": "",
     "hostedZoneId": "",
