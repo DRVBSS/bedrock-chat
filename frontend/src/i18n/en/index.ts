@@ -20,6 +20,16 @@ const translation = {
       userGroups: 'User Groups',
     },
     model: {
+      'claude-v5-sonnet': {
+        label: 'Claude Sonnet 5',
+        description:
+          'Latest Sonnet model for coding, agents, and professional work at scale with a 1M token context window.',
+      },
+      'claude-v4.8-opus': {
+        label: 'Claude Opus 4.8',
+        description:
+          'Premium Opus model for complex coding, long-running agents, and deeper enterprise reasoning with a 1M token context window.',
+      },
       'claude-v4-opus': {
         label: 'Claude 4 (Opus)',
         description:
@@ -159,6 +169,21 @@ const translation = {
         label: 'Meta Llama 3.2 90B Instruct',
         description:
           'Large multimodal model with advanced image understanding and visual reasoning capabilities for sophisticated visual intelligence applications.',
+      },
+      'llama4-scout-17b-instruct': {
+        label: 'Meta Llama 4 Scout 17B Instruct',
+        description:
+          'Multimodal Llama 4 model optimized for long documents with a 10M token context window.',
+      },
+      'llama4-maverick-17b-instruct': {
+        label: 'Meta Llama 4 Maverick 17B Instruct',
+        description:
+          'Multimodal Llama 4 mixture-of-experts model optimized for chat and instruction following.',
+      },
+      'grok-4.6': {
+        label: 'Grok 4.6',
+        description:
+          'Latest xAI flagship model for coding, agentic tasks, and knowledge work with a 500K token context window.',
       },
       'gpt-oss-20b': {
         label: 'GPT-OSS 20B',
@@ -545,7 +570,8 @@ How would you categorize this email?`,
         title: 'Prompt Caching',
         promptCachingEnabled: {
           title: 'Use prompt caching if the model supports it.',
-          description: 'If enabled, it may reduce the cost and latency of repeated conversations with this bot.',
+          description:
+            'If enabled, it may reduce the cost and latency of repeated conversations with this bot.',
         },
       },
     },
@@ -1018,7 +1044,7 @@ How would you categorize this email?`,
             'This bot is published as API by administrator. Published API must be shared with all users.',
         },
       },
-      invalidMermaidFormat: "Error in diagram drawing"
+      invalidMermaidFormat: 'Error in diagram drawing',
     },
     validation: {
       title: 'Validation Error',

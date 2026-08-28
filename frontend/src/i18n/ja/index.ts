@@ -23,6 +23,16 @@ const translation: typeof en = {
       backChat: 'チャットに戻る',
     },
     model: {
+      'claude-v5-sonnet': {
+        label: 'Claude Sonnet 5',
+        description:
+          'コーディング、エージェント、大規模な業務向けの最新Sonnetモデル。1Mトークンのコンテキストウィンドウ。',
+      },
+      'claude-v4.8-opus': {
+        label: 'Claude Opus 4.8',
+        description:
+          '複雑なコーディング、長時間稼働するエージェント、より深い業務推論向けのプレミアムOpusモデル。1Mトークンのコンテキストウィンドウ。',
+      },
       'claude-v4-opus': {
         label: 'Claude 4 (Opus)',
         description:
@@ -30,8 +40,7 @@ const translation: typeof en = {
       },
       'claude-v4.1-opus': {
         label: 'Claude 4.1 (Opus)',
-        description:
-          '最も強力なOpusの最新版。推論能力が向上',
+        description: '最も強力なOpusの最新版。推論能力が向上',
       },
       'claude-v4.5-opus': {
         label: 'Claude 4.5 (Opus)',
@@ -140,6 +149,20 @@ const translation: typeof en = {
         label: 'Meta Llama 3.3 70B Instruct',
         description:
           '405Bモデルと同等のパフォーマンスを低コストで提供する最新のLlama 3モデル。優れた推論能力と指示追従能力を備える',
+      },
+      'llama4-scout-17b-instruct': {
+        label: 'Llama 4 Scout 17B',
+        description:
+          '高速で効率的なLlama 4モデル。長いコンテキストの理解と日常的なマルチモーダル作業に対応。',
+      },
+      'llama4-maverick-17b-instruct': {
+        label: 'Llama 4 Maverick 17B',
+        description:
+          'より高度な推論、コーディング、マルチモーダル作業向けの高性能Llama 4モデル。',
+      },
+      'grok-4.6': {
+        label: 'Grok 4.6',
+        description: '高度な推論、コーディング、分析向けの最新Grokモデル。',
       },
       'llama3-2-1b-instruct': {
         label: 'Meta Llama 3.2 1B Instruct',
@@ -551,7 +574,8 @@ const translation: typeof en = {
         title: 'プロンプトキャッシュ',
         promptCachingEnabled: {
           title: 'モデルが対応している場合、プロンプトキャッシュを利用する。',
-          description: '有効にすると、このボットと繰り返し会話した際のコストとレイテンシーを削減できます。',
+          description:
+            '有効にすると、このボットと繰り返し会話した際のコストとレイテンシーを削減できます。',
         },
       },
     },
@@ -974,8 +998,7 @@ const translation: typeof en = {
       advancedConfigration: {
         existingKnowledgeBaseId: {
           label: '既存のAmazon Bedrock Knowledge BaseのID',
-          description:
-            '既存のAmazon Bedrock Knowledge Baseを利用できます',
+          description: '既存のAmazon Bedrock Knowledge Baseを利用できます',
         },
         createDedicatedKnowledgeBase: {
           label: '専用のKnowledge Baseを作成する',
@@ -1023,7 +1046,7 @@ const translation: typeof en = {
             'このボットは管理者によってAPIとして公開されています。APIを公開するためには、全ユーザーに共有する必要があります。',
         },
       },
-      invalidMermaidFormat: "ダイアグラム描画時にエラーが発生しました"
+      invalidMermaidFormat: 'ダイアグラム描画時にエラーが発生しました',
     },
     validation: {
       title: 'バリデーションエラー',

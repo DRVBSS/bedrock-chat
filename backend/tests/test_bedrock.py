@@ -132,6 +132,32 @@ class TestGetModelId(unittest.TestCase):
             expected_model_id,
         )
 
+    def test_new_claude_models_use_global_inference(self):
+        self.assertEqual(
+            get_model_id("claude-v5-sonnet", bedrock_region="us-east-1"),
+            "global.anthropic.claude-sonnet-5",
+        )
+        self.assertEqual(
+            get_model_id("claude-v4.8-opus", bedrock_region="us-east-1"),
+            "global.anthropic.claude-opus-4-8",
+        )
+
+    def test_grok_uses_global_inference(self):
+        self.assertEqual(
+            get_model_id("grok-4.6", bedrock_region="us-east-1"),
+            "global.xai.grok-4.6",
+        )
+
+    def test_llama_4_uses_us_inference_profile(self):
+        self.assertEqual(
+            get_model_id("llama4-scout-17b-instruct", bedrock_region="us-east-1"),
+            "us.meta.llama4-scout-17b-instruct-v1:0",
+        )
+        self.assertEqual(
+            get_model_id("llama4-maverick-17b-instruct", bedrock_region="us-east-1"),
+            "us.meta.llama4-maverick-17b-instruct-v1:0",
+        )
+
 
 class TestCallConverseApi(unittest.TestCase):
     def test_call_converse_api_with_global_inference(self):
@@ -304,6 +330,10 @@ class TestIsTopKSupported(unittest.TestCase):
     def test_opus_4_7_does_not_support_top_k(self):
         self.assertFalse(is_top_k_supported("claude-v4.7-opus"))
 
+    def test_latest_claude_models_do_not_support_top_k(self):
+        self.assertFalse(is_top_k_supported("claude-v4.8-opus"))
+        self.assertFalse(is_top_k_supported("claude-v5-sonnet"))
+
     def test_opus_4_6_still_supports_top_k(self):
         self.assertTrue(is_top_k_supported("claude-v4.6-opus"))
 
@@ -327,7 +357,6 @@ class TestGenerationParamsConverseConfigTopK(unittest.TestCase):
             top_p=0.999,
             temperature=0.6,
             stop_sequences=[],
-            reasoning_params=None,
         )
 
     def test_opus_4_7_omits_top_k_in_additional_fields(self):
@@ -336,9 +365,7 @@ class TestGenerationParamsConverseConfigTopK(unittest.TestCase):
             generation_params=self._params(),
             enable_reasoning=False,
         )
-        self.assertNotIn(
-            "top_k", cfg.get("additionalModelRequestFields", {})
-        )
+        self.assertNotIn("top_k", cfg.get("additionalModelRequestFields", {}))
 
     def test_opus_4_6_keeps_top_k_in_additional_fields(self):
         cfg = generation_params_to_converse_configuration(
@@ -346,9 +373,17 @@ class TestGenerationParamsConverseConfigTopK(unittest.TestCase):
             generation_params=self._params(),
             enable_reasoning=False,
         )
-        self.assertEqual(
-            cfg["additionalModelRequestFields"]["top_k"], 250
-        )
+        self.assertEqual(cfg["additionalModelRequestFields"]["top_k"], 250)
+
+    def test_latest_claude_models_omit_top_k_in_additional_fields(self):
+        for model in ("claude-v4.8-opus", "claude-v5-sonnet"):
+            with self.subTest(model=model):
+                cfg = generation_params_to_converse_configuration(
+                    model=model,
+                    generation_params=self._params(),
+                    enable_reasoning=False,
+                )
+                self.assertNotIn("top_k", cfg.get("additionalModelRequestFields", {}))
 
 
 class TestIsTemperatureSupported(unittest.TestCase):
@@ -361,6 +396,10 @@ class TestIsTemperatureSupported(unittest.TestCase):
 
     def test_opus_4_7_does_not_support_temperature(self):
         self.assertFalse(is_temperature_supported("claude-v4.7-opus"))
+
+    def test_latest_claude_models_do_not_support_temperature(self):
+        self.assertFalse(is_temperature_supported("claude-v4.8-opus"))
+        self.assertFalse(is_temperature_supported("claude-v5-sonnet"))
 
     def test_opus_4_6_still_supports_temperature(self):
         self.assertTrue(is_temperature_supported("claude-v4.6-opus"))
@@ -383,7 +422,6 @@ class TestGenerationParamsConverseConfigTemperature(unittest.TestCase):
             top_p=0.999,
             temperature=0.6,
             stop_sequences=[],
-            reasoning_params=None,
         )
 
     def test_opus_4_7_omits_temperature_no_reasoning(self):
@@ -409,6 +447,16 @@ class TestGenerationParamsConverseConfigTemperature(unittest.TestCase):
             enable_reasoning=False,
         )
         self.assertIn("temperature", cfg["inferenceConfig"])
+
+    def test_latest_claude_models_omit_temperature(self):
+        for model in ("claude-v4.8-opus", "claude-v5-sonnet"):
+            with self.subTest(model=model):
+                cfg = generation_params_to_converse_configuration(
+                    model=model,
+                    generation_params=self._params(),
+                    enable_reasoning=True,
+                )
+                self.assertNotIn("temperature", cfg["inferenceConfig"])
 
 
 if __name__ == "__main__":

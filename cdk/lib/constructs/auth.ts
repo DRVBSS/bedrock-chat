@@ -15,6 +15,7 @@ import {
   UserPoolIdentityProviderOidc,
 } from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as cr from "aws-cdk-lib/custom-resources";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { Runtime, Code, SingletonFunction } from "aws-cdk-lib/aws-lambda";
@@ -199,6 +200,40 @@ export class Auth extends Construct {
       }
     );
 
+    // This group may already exist when a user was invited before the next CDK
+    // deployment. Make its provisioning idempotent so the source-controlled
+    // deployment adopts that state instead of failing with GroupExistsException.
+    new cr.AwsCustomResource(this, "ExpandedModelAccessGroup", {
+      onCreate: {
+        service: "@aws-sdk/client-cognito-identity-provider",
+        action: "createGroup",
+        parameters: {
+          GroupName: "ExpandedModelAccess",
+          UserPoolId: userPool.userPoolId,
+          Description:
+            "Additional approved Bedrock models beyond the standard employee menu",
+        },
+        physicalResourceId: cr.PhysicalResourceId.of("ExpandedModelAccess"),
+        ignoreErrorCodesMatching: "GroupExistsException",
+      },
+      onUpdate: {
+        service: "@aws-sdk/client-cognito-identity-provider",
+        action: "updateGroup",
+        parameters: {
+          GroupName: "ExpandedModelAccess",
+          UserPoolId: userPool.userPoolId,
+          Description:
+            "Additional approved Bedrock models beyond the standard employee menu",
+        },
+      },
+      policy: cr.AwsCustomResourcePolicy.fromStatements([
+        new iam.PolicyStatement({
+          actions: ["cognito-idp:CreateGroup", "cognito-idp:UpdateGroup"],
+          resources: [userPool.userPoolArn],
+        }),
+      ]),
+    });
+
     const publishAllowedGroup = new CfnUserPoolGroup(
       this,
       "PublishAllowedGroup",
@@ -298,9 +333,11 @@ export class Auth extends Construct {
           webAclArn: props.webAclArn,
         }
       );
-      cognitoWebAclAssociation.addDependency(userPool.node.defaultChild as CfnResource);
+      cognitoWebAclAssociation.addDependency(
+        userPool.node.defaultChild as CfnResource
+      );
     }
-    
+
     this.client = client;
     this.userPool = userPool;
 

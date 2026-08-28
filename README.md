@@ -170,6 +170,7 @@ The override JSON must follow the same structure as cdk.json. You can override a
 - `enableRagReplicas`
 - `enableBedrockCrossRegionInference`
 - `globalAvailableModels`: accepts a list of model IDs to enable. The default value is an empty list, which enables all models.
+- `expandedAvailableModels`: models added to the base list for users in the Cognito `ExpandedModelAccess` group. Administrators remain unrestricted.
 - `logoPath`: relative path to the logo asset within the frontend `public/` directory that appears at the top of the navigation drawer.
 - And other context values defined in cdk.json
 
@@ -245,14 +246,16 @@ npm ci
   - `allowedIpV4AddressRanges`, `allowedIpV6AddressRanges`: Allowed IP Address range.
   - `enableLambdaSnapStart`: Defaults to true. Set to false if deploying to a [region that doesn't support Lambda SnapStart for Python functions](https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html#snapstart-supported-regions).
   - `globalAvailableModels`: Defaults to all. If set (list of model IDs), allows to globally control which models appear in dropdown menus across chats for all users and during bot creation in the Bedrock Chat application.
+  - `expandedAvailableModels`: Adds a second, server-enforced model tier for members of the Cognito `ExpandedModelAccess` group.
   - `logoPath`: Relative path under `frontend/public` that points to the image displayed at the top of the application drawer.
     The following model IDs are supported (please make sure that they are also enabled in the Bedrock console under Model access in your deployment region):
 
-- **Claude Models:** `claude-v4-opus`, `claude-v4.1-opus`, `claude-v4.5-opus`, `claude-v4.6-opus`, `claude-v4-sonnet`, `claude-v4.5-sonnet`, `claude-v4.6-sonnet`, `claude-v3.5-sonnet`, `claude-v3.5-sonnet-v2`, `claude-v3.7-sonnet`, `claude-v3.5-haiku`, `claude-v3-haiku`, `claude-v3-opus`
+- **Claude Models:** `claude-v5-sonnet`, `claude-v4.8-opus`, `claude-v4-opus`, `claude-v4.1-opus`, `claude-v4.5-opus`, `claude-v4.6-opus`, `claude-v4.7-opus`, `claude-v4-sonnet`, `claude-v4.5-sonnet`, `claude-v4.6-sonnet`, `claude-v4.5-haiku`, `claude-v3.5-sonnet`, `claude-v3.5-sonnet-v2`, `claude-v3.7-sonnet`, `claude-v3.5-haiku`, `claude-v3-haiku`, `claude-v3-opus`
 - **Amazon Nova Models:** `amazon-nova-pro`, `amazon-nova-lite`, `amazon-nova-micro`
 - **Mistral Models:** `mistral-7b-instruct`, `mixtral-8x7b-instruct`, `mistral-large`, `mistral-large-2`
 - **DeepSeek Models:** `deepseek-r1`
-- **Meta Llama Models:** `llama3-3-70b-instruct`, `llama3-2-1b-instruct`, `llama3-2-3b-instruct`, `llama3-2-11b-instruct`, `llama3-2-90b-instruct`
+- **Meta Llama Models:** `llama4-scout-17b-instruct`, `llama4-maverick-17b-instruct`, `llama3-3-70b-instruct`, `llama3-2-1b-instruct`, `llama3-2-3b-instruct`, `llama3-2-11b-instruct`, `llama3-2-90b-instruct`
+- **xAI Models:** `grok-4.6`
 
 The full list can be found in [index.ts](./frontend/src/constants/index.ts).
 

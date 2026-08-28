@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s - %(messa
 logger = logging.getLogger(__name__)
 
 GLOBAL_AVAILABLE_MODELS = os.environ.get("GLOBAL_AVAILABLE_MODELS")
+EXPANDED_AVAILABLE_MODELS = os.environ.get("EXPANDED_AVAILABLE_MODELS")
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL")
 TITLE_MODEL = os.environ.get("TITLE_MODEL")
 LOGO_PATH = os.environ.get("LOGO_PATH", "")
@@ -44,6 +45,24 @@ def get_global_available_models() -> list[str]:
     return []
 
 
+def get_expanded_available_models() -> list[str]:
+    """Return the additional models granted to ExpandedModelAccess users."""
+    if not EXPANDED_AVAILABLE_MODELS:
+        return []
+
+    try:
+        models = json.loads(EXPANDED_AVAILABLE_MODELS)
+        if not isinstance(models, list):
+            logger.error(
+                f"EXPANDED_AVAILABLE_MODELS must be a JSON array, got {type(models)}"
+            )
+            return []
+        return [model for model in models if model and isinstance(model, str)]
+    except json.JSONDecodeError:
+        logger.error("Failed to parse EXPANDED_AVAILABLE_MODELS as JSON")
+        return []
+
+
 def get_available_models_for_user(user: User | None) -> list[str]:
     """Return the model allowlist for a user.
 
@@ -55,7 +74,13 @@ def get_available_models_for_user(user: User | None) -> list[str]:
         logger.info("Admin user has unrestricted model access")
         return []
 
-    return get_global_available_models()
+    base_models = get_global_available_models()
+    if user is None or not user.has_expanded_model_access() or not base_models:
+        return base_models
+
+    # Preserve menu order and avoid duplicate entries when a model is present in
+    # both the employee and expanded lists.
+    return list(dict.fromkeys([*base_models, *get_expanded_available_models()]))
 
 
 def ensure_model_available_for_user(user: User, model: str) -> None:

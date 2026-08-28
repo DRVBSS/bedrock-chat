@@ -256,6 +256,25 @@ BEDROCK_PRICING = {
     },
     "ap-northeast-1": {},
     "default": {
+        "claude-v5-sonnet": {
+            "input": 0.002,
+            "output": 0.010,
+            "cache_write_input": 0.0025,
+            "cache_read_input": 0.0002,
+        },
+        "claude-v4.8-opus": {
+            "input": 0.005,
+            "output": 0.025,
+            "cache_write_input": 0.00625,
+            "cache_read_input": 0.0005,
+        },
+        "grok-4.6": {
+            "input": 0.002,
+            "output": 0.006,
+            "cache_read_input": 0.0005,
+        },
+        "llama4-scout-17b-instruct": {"input": 0.00017, "output": 0.00066},
+        "llama4-maverick-17b-instruct": {"input": 0.00024, "output": 0.00097},
         "claude-v4-opus": {
             "input": 0.015,
             "output": 0.075,

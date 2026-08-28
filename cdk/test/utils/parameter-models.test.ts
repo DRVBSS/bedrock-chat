@@ -209,7 +209,9 @@ describe("resolveBedrockChatParameters", () => {
       expect(result.enableLambdaSnapStart).toBe(false);
       expect(result.alternateDomainName).toBe("chat.example.com");
       expect(result.hostedZoneId).toBe("Z1234567890");
-      expect(result.devAccessIamRoleArn).toBe("arn:aws:iam::123456789012:role/Admin")
+      expect(result.devAccessIamRoleArn).toBe(
+        "arn:aws:iam::123456789012:role/Admin"
+      );
     });
 
     test("should throw ZodError when invalid parameter is specified", () => {
@@ -506,6 +508,7 @@ describe("getBedrockChatParameters", () => {
       expect(result.enableLambdaSnapStart).toBe(true);
       expect(result.selfSignUpEnabled).toBe(true);
       expect(result.autoJoinUserGroups).toEqual(["CreatingBotAllowed"]);
+      expect(result.expandedAvailableModels).toEqual([]);
       expect(result.allowedSignUpEmailDomains).toEqual([]);
       expect(result.identityProviders).toEqual([]);
     });
