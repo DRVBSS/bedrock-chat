@@ -57,6 +57,8 @@ ENABLE_BEDROCK_CROSS_REGION_INFERENCE = (
 
 # Base model IDs mapping
 BASE_MODEL_IDS = {
+    "claude-v5-sonnet": "anthropic.claude-sonnet-5",
+    "claude-v4.8-opus": "anthropic.claude-opus-4-8",
     "claude-v4-opus": "anthropic.claude-opus-4-20250514-v1:0",
     "claude-v4.1-opus": "anthropic.claude-opus-4-1-20250805-v1:0",
     "claude-v4.5-opus": "anthropic.claude-opus-4-5-20251101-v1:0",
@@ -86,6 +88,9 @@ BASE_MODEL_IDS = {
     "llama3-2-3b-instruct": "meta.llama3-2-3b-instruct-v1:0",
     "llama3-2-11b-instruct": "meta.llama3-2-11b-instruct-v1:0",
     "llama3-2-90b-instruct": "meta.llama3-2-90b-instruct-v1:0",
+    "llama4-scout-17b-instruct": "meta.llama4-scout-17b-instruct-v1:0",
+    "llama4-maverick-17b-instruct": "meta.llama4-maverick-17b-instruct-v1:0",
+    "grok-4.6": "xai.grok-4.6",
     # OpenAI GPT-OSS models
     "gpt-oss-20b": "openai.gpt-oss-20b-1:0",
     "gpt-oss-120b": "openai.gpt-oss-120b-1:0",
@@ -97,6 +102,9 @@ BASE_MODEL_IDS = {
 
 # Global inference profiles
 GLOBAL_INFERENCE_PROFILES = {
+    "claude-v5-sonnet": {"supported_regions": ["us-east-1", "us-east-2", "us-west-2"]},
+    "claude-v4.8-opus": {"supported_regions": ["us-east-1", "us-east-2", "us-west-2"]},
+    "grok-4.6": {"supported_regions": ["us-east-1", "us-east-2", "us-west-2"]},
     "claude-v4.5-opus": {
         "supported_regions": [
             "us-west-2",
@@ -364,6 +372,21 @@ GLOBAL_INFERENCE_PROFILES = {
 
 # Regional inference profiles
 REGIONAL_INFERENCE_PROFILES = {
+    "claude-v5-sonnet": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
+    "claude-v4.8-opus": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
+    "grok-4.6": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
+    "llama4-scout-17b-instruct": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
+    "llama4-maverick-17b-instruct": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
     "claude-v4-opus": {
         "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
     },
@@ -708,23 +731,32 @@ def is_openai_gpt_model(model: type_model_name) -> bool:
     return model.startswith("gpt-")
 
 
+def is_grok_model(model: type_model_name) -> bool:
+    """Check if the model is an xAI Grok model."""
+    return model.startswith("grok-")
+
+
 def is_tooluse_supported(model: type_model_name) -> bool:
     """Check if the model is supported for tool use"""
     return model not in [
         "deepseek-r1",
         "llama3-2-1b-instruct",
         "llama3-2-3b-instruct",
+        "llama4-scout-17b-instruct",
+        "grok-4.6",
         "",
     ]
 
 
 def is_adaptive_thinking_model(model: type_model_name) -> bool:
-    """Claude 4.6+ models use adaptive thinking instead of extended thinking with budget_tokens."""
+    """Recent Claude models use adaptive thinking instead of a token budget."""
     return model in [
         "claude-v4.6-opus",
         "claude-v4.6-sonnet",
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
     ]
 
 
@@ -735,6 +767,8 @@ def is_prefill_supported(model: type_model_name) -> bool:
         "claude-v4.6-sonnet",
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
     ]
 
 
@@ -745,6 +779,8 @@ def is_specify_both_temperature_and_top_p_supported(model: type_model_name) -> b
         "claude-v4.6-opus",
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
         "claude-v4.5-sonnet",
         "claude-v4.6-sonnet",
         "claude-v4.5-haiku",
@@ -756,6 +792,8 @@ def is_top_k_supported(model: type_model_name) -> bool:
     return model not in [
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
     ]
 
 
@@ -764,6 +802,8 @@ def is_top_p_supported(model: type_model_name) -> bool:
     return model not in [
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-6-astra",
@@ -775,6 +815,8 @@ def is_temperature_supported(model: type_model_name) -> bool:
     return model not in [
         "claude-v4.7-opus",
         "claude-v5.5-opus",
+        "claude-v4.8-opus",
+        "claude-v5-sonnet",
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-6-astra",
@@ -803,6 +845,8 @@ def is_prompt_caching_supported(
             "claude-v4.6-opus",
             "claude-v4.7-opus",
             "claude-v5.5-opus",
+            "claude-v4.8-opus",
+            "claude-v5-sonnet",
             "claude-v4-sonnet",
             "claude-v4.5-sonnet",
             "claude-v4.6-sonnet",
@@ -820,6 +864,8 @@ def is_prompt_caching_supported(
             "claude-v4.6-opus",
             "claude-v4.7-opus",
             "claude-v5.5-opus",
+            "claude-v4.8-opus",
+            "claude-v5-sonnet",
             "claude-v4-sonnet",
             "claude-v4.5-sonnet",
             "claude-v4.6-sonnet",
@@ -840,11 +886,14 @@ def is_multiple_system_prompt_content_supported(model: type_model_name):
         or is_llama_model(model)
         or is_mistral(model)
         or is_gpt_oss_model(model)
+        or is_grok_model(model)
     )
 
 
 def is_unsigned_reasoning_content_supported(model: type_model_name):
-    return not (is_deepseek_model(model) or is_gpt_oss_model(model))
+    return not (
+        is_deepseek_model(model) or is_gpt_oss_model(model) or is_grok_model(model)
+    )
 
 
 class InferenceConfiguration(TypedDict):
@@ -994,6 +1043,25 @@ def _prepare_openai_gpt_model_params(
 
     return {
         "inferenceConfig": inference_config,
+    }
+
+
+def _prepare_grok_model_params(
+    model: type_model_name, generation_params: Optional[GenerationParamsModel] = None
+) -> ConverseConfiguration:
+    """Prepare the conservative Converse configuration accepted by Grok 4.6.
+
+    Grok performs reasoning by default. Avoid Anthropic-only fields such as
+    ``top_k`` and ``thinking`` while still honoring the user's output limit.
+    """
+    return {
+        "inferenceConfig": {
+            "maxTokens": (
+                generation_params.max_tokens
+                if generation_params
+                else DEFAULT_GENERATION_CONFIG["max_tokens"]
+            )
+        }
     }
 
 
@@ -1210,6 +1278,9 @@ def generation_params_to_converse_configuration(
         # Special handling for Mistral models
         converse_configuration = _prepare_mistral_model_params(model, generation_params)
 
+    elif is_grok_model(model):
+        converse_configuration = _prepare_grok_model_params(model, generation_params)
+
     elif is_openai_gpt_model(model):
         # Special handling for OpenAI GPT models (GPT-OSS, GPT-6)
         converse_configuration = _prepare_openai_gpt_model_params(
@@ -1230,7 +1301,7 @@ def generation_params_to_converse_configuration(
             )
 
             if is_adaptive_thinking_model(model):
-                # Claude 4.6 uses adaptive thinking instead of budget_tokens
+                # Recent Claude models use adaptive thinking instead of budget_tokens.
                 converse_configuration = {
                     "inferenceConfig": {
                         "maxTokens": max_tokens,

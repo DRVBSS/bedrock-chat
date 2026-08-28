@@ -79,11 +79,16 @@
     "enableBotStoreReplicas": false,
     "botStoreLanguage": "en",
     "globalAvailableModels": [
-      "claude-v4.7-opus",
-      "claude-v4.6-sonnet",
+      "claude-v5-sonnet",
+      "claude-v4.8-opus",
       "claude-v4.5-haiku"
     ],
-    "defaultModel": "claude-v4.6-sonnet",
+    "expandedAvailableModels": [
+      "grok-4.6",
+      "llama4-scout-17b-instruct",
+      "llama4-maverick-17b-instruct"
+    ],
+    "defaultModel": "claude-v5-sonnet",
     "titleModel": "claude-v4.5-haiku",
     "tokenValidMinutes": 30,
     "alternateDomainName": "",

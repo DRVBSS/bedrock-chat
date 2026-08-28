@@ -28,6 +28,9 @@ class User(UserWithoutGroups):
     def is_admin(self) -> bool:
         return "Admin" in self.groups
 
+    def has_expanded_model_access(self) -> bool:
+        return self.is_admin() or "ExpandedModelAccess" in self.groups
+
     def is_creating_bot_allowed(self) -> bool:
         return self.is_admin() or "CreatingBotAllowed" in self.groups
 

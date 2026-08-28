@@ -53,6 +53,7 @@ export interface BedrockChatStackProps extends StackProps {
   readonly enableBotStoreReplicas: boolean;
   readonly botStoreLanguage: Language;
   readonly globalAvailableModels?: string[];
+  readonly expandedAvailableModels?: string[];
   readonly defaultModel?: string;
   readonly titleModel?: string;
   readonly tokenValidMinutes: number;
@@ -147,16 +148,17 @@ export class BedrockChatStack extends cdk.Stack {
       }
     );
     // CodeBuild used for KnowledgeBase
-    const bedrockSharedKnowledgeBasesCodebuild = new BedrockSharedKnowledgeBasesCodebuild(
-      this,
-      "BedrockSharedKnowledgeBasesCodebuild",
-      {
-        sourceBucket,
-        envName: props.envName,
-        envPrefix: props.envPrefix,
-        bedrockRegion: props.bedrockRegion,
-      }
-    );
+    const bedrockSharedKnowledgeBasesCodebuild =
+      new BedrockSharedKnowledgeBasesCodebuild(
+        this,
+        "BedrockSharedKnowledgeBasesCodebuild",
+        {
+          sourceBucket,
+          envName: props.envName,
+          envPrefix: props.envPrefix,
+          bedrockRegion: props.bedrockRegion,
+        }
+      );
 
     const frontend = new Frontend(this, "Frontend", {
       accessLogBucket,
@@ -168,16 +170,15 @@ export class BedrockChatStack extends cdk.Stack {
     });
 
     let cognitoWebAcl: WebAclForCognito | undefined;
-    if (props.allowedIpV4AddressRanges.length > 0 || props.allowedIpV6AddressRanges.length > 0) {
-      cognitoWebAcl = new WebAclForCognito(
-        this,
-        "WebAclForCognito",
-        {
-          envPrefix: props.envPrefix,
-          allowedIpV4AddressRanges: props.allowedIpV4AddressRanges,
-          allowedIpV6AddressRanges: props.allowedIpV6AddressRanges,
-        }
-      );
+    if (
+      props.allowedIpV4AddressRanges.length > 0 ||
+      props.allowedIpV6AddressRanges.length > 0
+    ) {
+      cognitoWebAcl = new WebAclForCognito(this, "WebAclForCognito", {
+        envPrefix: props.envPrefix,
+        allowedIpV4AddressRanges: props.allowedIpV4AddressRanges,
+        allowedIpV6AddressRanges: props.allowedIpV6AddressRanges,
+      });
     }
 
     const auth = new Auth(this, "Auth", {
@@ -229,7 +230,8 @@ export class BedrockChatStack extends cdk.Stack {
       database,
       documentBucket: props.documentBucket,
       bedrockCustomBotProject: bedrockCustomBotCodebuild.project,
-      bedrockSharedKnowledgeBasesProject: bedrockSharedKnowledgeBasesCodebuild.project,
+      bedrockSharedKnowledgeBasesProject:
+        bedrockSharedKnowledgeBasesCodebuild.project,
       enableRagReplicas: props.enableRagReplicas,
     });
 
@@ -242,17 +244,18 @@ export class BedrockChatStack extends cdk.Stack {
       documentBucket: props.documentBucket,
       apiPublishProject: apiPublishCodebuild.project,
       bedrockCustomBotProject: bedrockCustomBotCodebuild.project,
-      bedrockSharedKnowledgeBasesProject: bedrockSharedKnowledgeBasesCodebuild.project,
+      bedrockSharedKnowledgeBasesProject:
+        bedrockSharedKnowledgeBasesCodebuild.project,
       embeddingStateMachine: embedding.stateMachine,
       usageAnalysis,
       largeMessageBucket,
-      enableBedrockGlobalInference:
-        props.enableBedrockGlobalInference,
+      enableBedrockGlobalInference: props.enableBedrockGlobalInference,
       enableBedrockCrossRegionInference:
         props.enableBedrockCrossRegionInference,
       enableLambdaSnapStart: props.enableLambdaSnapStart,
       openSearchEndpoint: botStore?.openSearchEndpoint,
       globalAvailableModels: props.globalAvailableModels,
+      expandedAvailableModels: props.expandedAvailableModels,
       defaultModel: props.defaultModel,
       titleModel: props.titleModel,
       logoPath: props.logoPath,
@@ -274,12 +277,16 @@ export class BedrockChatStack extends cdk.Stack {
       botStore?.addDataAccessPolicy(
         props.envPrefix,
         "DAPolicyDevAccess",
-        iam.Role.fromRoleArn(this, "DevAccessIamRoleArn", props.devAccessIamRoleArn),
+        iam.Role.fromRoleArn(
+          this,
+          "DevAccessIamRoleArn",
+          props.devAccessIamRoleArn
+        ),
         [
           "aoss:DescribeCollectionItems",
           "aoss:CreateCollectionItems",
           "aoss:DeleteCollectionItems",
-          "aoss:UpdateCollectionItems"
+          "aoss:UpdateCollectionItems",
         ],
         [
           "aoss:DescribeIndex",
@@ -287,7 +294,7 @@ export class BedrockChatStack extends cdk.Stack {
           "aoss:WriteDocument",
           "aoss:CreateIndex",
           "aoss:DeleteIndex",
-          "aoss:UpdateIndex"
+          "aoss:UpdateIndex",
         ]
       );
     }
@@ -300,8 +307,7 @@ export class BedrockChatStack extends cdk.Stack {
       bedrockRegion: props.bedrockRegion,
       largeMessageBucket,
       documentBucket: props.documentBucket,
-      enableBedrockGlobalInference:
-        props.enableBedrockGlobalInference,
+      enableBedrockGlobalInference: props.enableBedrockGlobalInference,
       enableBedrockCrossRegionInference:
         props.enableBedrockCrossRegionInference,
       enableLambdaSnapStart: props.enableLambdaSnapStart,
@@ -369,7 +375,7 @@ export class BedrockChatStack extends cdk.Stack {
       value: largeMessageBucket.bucketName,
       exportName: `${props.envPrefix}${sepHyphen}BedrockClaudeChatLargeMessageBucketName`,
     });
-    new CfnOutput(this, 'EmbeddingStateMachineArn', {
+    new CfnOutput(this, "EmbeddingStateMachineArn", {
       value: embedding.stateMachine.stateMachineArn,
     });
   }

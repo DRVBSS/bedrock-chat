@@ -37,6 +37,13 @@ const OPENAI_GPT_6_SUPPORTED_MEDIA_TYPES = [
   'image/webp',
 ];
 
+const GROK_SUPPORTED_MEDIA_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
+
 const useModelState = create<{
   modelId: Model | undefined;
   setModelId: (m: Model) => void;
@@ -83,6 +90,21 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
 
   const availableModels = useMemo<ModelItem[]>(() => {
     return [
+      {
+        modelId: 'claude-v5-sonnet',
+        label: t('model.claude-v5-sonnet.label'),
+        description: t('model.claude-v5-sonnet.description'),
+        supportMediaType: CLAUDE_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true,
+        forceReasoningEnabled: true,
+      },
+      {
+        modelId: 'claude-v4.8-opus',
+        label: t('model.claude-v4.8-opus.label'),
+        description: t('model.claude-v4.8-opus.description'),
+        supportMediaType: CLAUDE_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true,
+      },
       {
         modelId: 'claude-v4-opus',
         label: t('model.claude-v4-opus.label'),
@@ -262,6 +284,28 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
         supportMediaType: LLAMA_SUPPORTED_MEDIA_TYPES,
         supportReasoning: false,
       },
+      {
+        modelId: 'llama4-scout-17b-instruct',
+        label: t('model.llama4-scout-17b-instruct.label'),
+        description: t('model.llama4-scout-17b-instruct.description'),
+        supportMediaType: LLAMA_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: false,
+      },
+      {
+        modelId: 'llama4-maverick-17b-instruct',
+        label: t('model.llama4-maverick-17b-instruct.label'),
+        description: t('model.llama4-maverick-17b-instruct.description'),
+        supportMediaType: LLAMA_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: false,
+      },
+      {
+        modelId: 'grok-4.6',
+        label: t('model.grok-4.6.label'),
+        description: t('model.grok-4.6.description'),
+        supportMediaType: GROK_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true,
+        forceReasoningEnabled: true,
+      },
       // OpenAI GPT-OSS models
       {
         modelId: 'gpt-oss-20b',
@@ -392,7 +436,11 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
       const modelExists = filteredModels.some(
         (m: ModelItem) => toCamelCase(m.modelId) === toCamelCase(targetModelId)
       );
-      return modelExists ? targetModelId : (getDefaultModel() ?? filteredModels[0]?.modelId ?? 'amazon-nova-lite');
+      return modelExists
+        ? targetModelId
+        : (getDefaultModel() ??
+            filteredModels[0]?.modelId ??
+            'amazon-nova-lite');
     },
     [filteredModels, getDefaultModel]
   );
@@ -451,7 +499,9 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
   }, [botId]);
 
   const model = useMemo(() => {
-    if (!modelId) { return undefined; }
+    if (!modelId) {
+      return undefined;
+    }
     return filteredModels.find(
       (model: ModelItem) => toCamelCase(model.modelId) === toCamelCase(modelId)
     );

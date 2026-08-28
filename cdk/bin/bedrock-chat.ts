@@ -29,7 +29,8 @@ const params = getBedrockChatParameters(
 const sepHyphen = params.envPrefix ? "-" : "";
 
 // Enable or disable creating the Frontend WAF via context 'enableFrontendWaf' (defaults to true)
-const enableFrontendWaf = (app.node.tryGetContext("enableFrontendWaf") as boolean | undefined) ?? true;
+const enableFrontendWaf =
+  (app.node.tryGetContext("enableFrontendWaf") as boolean | undefined) ?? true;
 
 let waf: FrontendWafStack | undefined;
 if (enableFrontendWaf) {
@@ -79,8 +80,9 @@ const chat = new BedrockChatStack(
     envPrefix: params.envPrefix,
     crossRegionReferences: true,
     bedrockRegion: params.bedrockRegion,
-    webAclId: waf ? waf.webAclArn.value : '',
-    enableIpV6: params.enableFrontendIpv6 && params.allowedIpV6AddressRanges.length > 0,
+    webAclId: waf ? waf.webAclArn.value : "",
+    enableIpV6:
+      params.enableFrontendIpv6 && params.allowedIpV6AddressRanges.length > 0,
     identityProviders: params.identityProviders,
     userPoolDomainPrefix: params.userPoolDomainPrefix,
     publishedApiAllowedIpV4AddressRanges:
@@ -103,6 +105,7 @@ const chat = new BedrockChatStack(
     enableBotStoreReplicas: params.enableBotStoreReplicas,
     botStoreLanguage: params.botStoreLanguage,
     globalAvailableModels: params.globalAvailableModels,
+    expandedAvailableModels: params.expandedAvailableModels,
     defaultModel: params.defaultModel,
     titleModel: params.titleModel,
     tokenValidMinutes: params.tokenValidMinutes,

@@ -50,6 +50,7 @@ export interface ApiProps {
   readonly enableLambdaSnapStart: boolean;
   readonly openSearchEndpoint?: string;
   readonly globalAvailableModels?: string[];
+  readonly expandedAvailableModels?: string[];
   readonly defaultModel?: string;
   readonly titleModel?: string;
   readonly logoPath?: string;
@@ -290,7 +291,8 @@ export class Api extends Construct {
         DOCUMENT_BUCKET: props.documentBucket.bucketName,
         LARGE_MESSAGE_BUCKET: props.largeMessageBucket.bucketName,
         PUBLISH_API_CODEBUILD_PROJECT_NAME: props.apiPublishProject.projectName,
-        EMBEDDING_STATE_MACHINE_ARN: props.embeddingStateMachine.stateMachineArn,
+        EMBEDDING_STATE_MACHINE_ARN:
+          props.embeddingStateMachine.stateMachineArn,
         USAGE_ANALYSIS_DATABASE:
           props.usageAnalysis?.database.databaseName || "",
         USAGE_ANALYSIS_TABLE:
@@ -301,8 +303,11 @@ export class Api extends Construct {
           props.enableBedrockGlobalInference.toString(),
         ENABLE_BEDROCK_CROSS_REGION_INFERENCE:
           props.enableBedrockCrossRegionInference.toString(),
-        GLOBAL_AVAILABLE_MODELS: props.globalAvailableModels 
+        GLOBAL_AVAILABLE_MODELS: props.globalAvailableModels
           ? JSON.stringify(props.globalAvailableModels)
+          : "[]",
+        EXPANDED_AVAILABLE_MODELS: props.expandedAvailableModels
+          ? JSON.stringify(props.expandedAvailableModels)
           : "[]",
         DEFAULT_MODEL: props.defaultModel || "",
         TITLE_MODEL: props.titleModel || "",

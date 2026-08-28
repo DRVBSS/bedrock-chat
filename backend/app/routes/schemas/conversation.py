@@ -6,6 +6,8 @@ from mypy_boto3_bedrock_runtime.literals import DocumentFormatType, ImageFormatT
 from pydantic import Discriminator, Field, JsonValue, root_validator
 
 type_model_name = Literal[
+    "claude-v5-sonnet",
+    "claude-v4.8-opus",
     "claude-v4-opus",
     "claude-v4.1-opus",
     "claude-v4.5-opus",
@@ -39,6 +41,10 @@ type_model_name = Literal[
     "llama3-2-3b-instruct",
     "llama3-2-11b-instruct",
     "llama3-2-90b-instruct",
+    "llama4-scout-17b-instruct",
+    "llama4-maverick-17b-instruct",
+    # xAI
+    "grok-4.6",
     "gpt-oss-20b",
     "gpt-oss-120b",
     "gpt-6-sol",

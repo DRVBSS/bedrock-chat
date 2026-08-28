@@ -8,6 +8,7 @@ from app.usecases import global_config
 from app.usecases.global_config import (
     ensure_model_available_for_user,
     get_available_models_for_user,
+    get_expanded_available_models,
     get_global_available_models,
 )
 from tests.test_usecases.utils.user_factory import (
@@ -148,6 +149,52 @@ class TestGetAvailableModelsForUser(unittest.TestCase):
         ensure_model_available_for_user(
             create_test_admin_user("dimitri"), "amazon-nova-pro"
         )
+
+    @patch.object(
+        global_config,
+        "EXPANDED_AVAILABLE_MODELS",
+        '["grok-4.6", "llama4-scout-17b-instruct", "llama4-maverick-17b-instruct"]',
+    )
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v5-sonnet", "claude-v4.8-opus", "claude-v4.5-haiku"]',
+    )
+    def test_expanded_user_receives_base_and_additional_models(self):
+        result = get_available_models_for_user(
+            create_test_user("dimas", ["ExpandedModelAccess"])
+        )
+        self.assertEqual(
+            result,
+            [
+                "claude-v5-sonnet",
+                "claude-v4.8-opus",
+                "claude-v4.5-haiku",
+                "grok-4.6",
+                "llama4-scout-17b-instruct",
+                "llama4-maverick-17b-instruct",
+            ],
+        )
+
+    @patch.object(
+        global_config,
+        "EXPANDED_AVAILABLE_MODELS",
+        '["grok-4.6", "claude-v5-sonnet"]',
+    )
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v5-sonnet", "claude-v4.5-haiku"]',
+    )
+    def test_expanded_user_model_union_is_deduplicated(self):
+        result = get_available_models_for_user(
+            create_test_user("dimas", ["ExpandedModelAccess"])
+        )
+        self.assertEqual(result, ["claude-v5-sonnet", "claude-v4.5-haiku", "grok-4.6"])
+
+    @patch.object(global_config, "EXPANDED_AVAILABLE_MODELS", "invalid json")
+    def test_invalid_expanded_model_config_fails_closed_to_base_tier(self):
+        self.assertEqual(get_expanded_available_models(), [])
 
     @patch("app.usecases.global_config.logger")
     @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", '["test-model"]')

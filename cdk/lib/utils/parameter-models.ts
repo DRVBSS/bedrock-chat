@@ -51,7 +51,6 @@ function getEnvVar(name: string, defaultValue?: string): string | undefined {
  * Parameters schema for the main Bedrock Chat application
  */
 const BedrockChatParametersSchema = BaseParametersSchema.extend({
-
   // Frontend WAF toggle (CloudFront scope)
   // Set to 'false' if you're unable to deploy resources in us-east-1
   enableFrontendWaf: z.boolean().default(true),
@@ -115,6 +114,9 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   // If not configured (empty array), all models are available
   globalAvailableModels: z.array(z.string()).default([]),
 
+  // Additional models exposed only to users in ExpandedModelAccess.
+  expandedAvailableModels: z.array(z.string()).default([]),
+
   // Default model to be selected when user first visits the app
   defaultModel: z.string().optional(),
 
@@ -126,7 +128,7 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   logoPath: z.string().default(""),
 
   // debug parameter
-  devAccessIamRoleArn: z.string().default("")
+  devAccessIamRoleArn: z.string().default(""),
 });
 
 /**
@@ -173,16 +175,18 @@ const BedrockCustomBotParametersSchema = BaseParametersSchema.extend({
 /**
  * Parameters schema for shared Knowledge Bases
  */
-const BedrockSharedKnowledgeBasesParametersSchema = BaseParametersSchema.extend({
-  // Knowledge Base configuration
-  sharedKnowledgeBases: z.string(),
-  documentBucketName: z.string(),
-  enableRagReplicas: z
-    .string()
-    .optional()
-    .transform((val) => val === "true")
-    .default("false"),
-});
+const BedrockSharedKnowledgeBasesParametersSchema = BaseParametersSchema.extend(
+  {
+    // Knowledge Base configuration
+    sharedKnowledgeBases: z.string(),
+    documentBucketName: z.string(),
+    enableRagReplicas: z
+      .string()
+      .optional()
+      .transform((val) => val === "true")
+      .default("false"),
+  }
+);
 
 /**
  * Type definitions for each parameter set
@@ -276,6 +280,7 @@ export function resolveBedrockChatParameters(
     enableBotStoreReplicas: app.node.tryGetContext("enableBotStoreReplicas"),
     botStoreLanguage: app.node.tryGetContext("botStoreLanguage"),
     globalAvailableModels: app.node.tryGetContext("globalAvailableModels"),
+    expandedAvailableModels: app.node.tryGetContext("expandedAvailableModels"),
     defaultModel: app.node.tryGetContext("defaultModel"),
     titleModel: app.node.tryGetContext("titleModel"),
     logoPath: app.node.tryGetContext("logoPath"),
@@ -340,9 +345,7 @@ export function resolveApiPublishParameters(): ApiPublishParameters {
     envName: getEnvVar("ENV_NAME"),
     envPrefix: getEnvVar("ENV_PREFIX"),
     bedrockRegion: getEnvVar("BEDROCK_REGION"),
-    enableBedrockGlobalInference: getEnvVar(
-      "ENABLE_BEDROCK_GLOBAL_INFERENCE"
-    ),
+    enableBedrockGlobalInference: getEnvVar("ENABLE_BEDROCK_GLOBAL_INFERENCE"),
     enableBedrockCrossRegionInference: getEnvVar(
       "ENABLE_BEDROCK_CROSS_REGION_INFERENCE"
     ),
