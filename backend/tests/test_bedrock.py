@@ -207,6 +207,69 @@ class TestGetModelId(unittest.TestCase):
                         {"type": "adaptive"},
                     )
 
+    def test_get_model_id_claude_5_5_sonnet_and_haiku(self):
+        """Claude Sonnet 5.5 and Haiku 5.5 are inference-profile only"""
+        for model, base_model_id in [
+            ("claude-v5.5-sonnet", "anthropic.claude-sonnet-5-5"),
+            ("claude-v5.5-haiku", "anthropic.claude-haiku-5-5"),
+        ]:
+            for region, enable_global, prefix in [
+                ("us-east-1", True, "global"),
+                ("us-east-1", False, "us"),
+                ("ca-central-1", False, "us"),
+                ("eu-west-1", False, "eu"),
+                ("ap-southeast-2", False, "au"),
+                ("sa-east-1", True, "global"),
+            ]:
+                with self.subTest(
+                    model=model, region=region, enable_global=enable_global
+                ):
+                    self.assertEqual(
+                        get_model_id(
+                            model,  # type: ignore[arg-type]
+                            enable_global=enable_global,
+                            enable_cross_region=True,
+                            bedrock_region=region,
+                        ),
+                        f"{prefix}.{base_model_id}",
+                    )
+        # Only Haiku 5.5 has a Japan geo profile
+        self.assertEqual(
+            get_model_id(
+                "claude-v5.5-haiku",
+                enable_global=False,
+                enable_cross_region=True,
+                bedrock_region="ap-northeast-1",
+            ),
+            "jp.anthropic.claude-haiku-5-5",
+        )
+
+    def test_compose_args_claude_5_5_sonnet_and_haiku_omit_sampling_params(self):
+        """Claude Sonnet 5.5 and Haiku 5.5 follow Opus 4.7+: no temperature, top_p or top_k"""
+        for model in ["claude-v5.5-sonnet", "claude-v5.5-haiku"]:
+            for enable_reasoning in [False, True]:
+                with self.subTest(model=model, enable_reasoning=enable_reasoning):
+                    args = compose_args_for_converse_api(
+                        messages=[
+                            SimpleMessageModel(
+                                role="user",
+                                content=[
+                                    TextContentModel(content_type="text", body="Hi")
+                                ],
+                            )
+                        ],
+                        model=model,  # type: ignore[arg-type]
+                        enable_reasoning=enable_reasoning,
+                    )
+                    self.assertNotIn("temperature", args["inferenceConfig"])
+                    self.assertNotIn("topP", args["inferenceConfig"])
+                    self.assertNotIn("top_k", args["additionalModelRequestFields"])
+                    if enable_reasoning:
+                        self.assertEqual(
+                            args["additionalModelRequestFields"]["thinking"],
+                            {"type": "adaptive"},
+                        )
+
     def test_get_model_id_openai_gpt_6(self):
         """GPT-6 is inference-profile only: global. everywhere, us. in North America"""
         for model in ["gpt-6-sol", "gpt-6-luna", "gpt-6-astra"]:
