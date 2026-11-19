@@ -101,7 +101,7 @@
     ],
     "dataRetentionModelsRegion": "us-east-2",
     "defaultModel": "claude-v5.5-sonnet",
-    "titleModel": "claude-v4.5-haiku",
+    "titleModel": "claude-v5.5-haiku",
     "tokenValidMinutes": 30,
     "alternateDomainName": "",
     "hostedZoneId": "",
