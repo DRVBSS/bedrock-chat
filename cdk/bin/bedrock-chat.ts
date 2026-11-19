@@ -106,6 +106,8 @@ const chat = new BedrockChatStack(
     botStoreLanguage: params.botStoreLanguage,
     globalAvailableModels: params.globalAvailableModels,
     expandedAvailableModels: params.expandedAvailableModels,
+    adminAvailableModels: params.adminAvailableModels,
+    dataRetentionModelsRegion: params.dataRetentionModelsRegion,
     defaultModel: params.defaultModel,
     titleModel: params.titleModel,
     tokenValidMinutes: params.tokenValidMinutes,

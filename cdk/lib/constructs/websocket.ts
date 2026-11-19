@@ -16,6 +16,12 @@ import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha";
 import { Database } from "./database";
 
 export interface WebSocketProps {
+  // Model access lists. The chat runs in this function, so without these the
+  // server-side model allowlist would not be enforced for streamed chats.
+  readonly globalAvailableModels?: string[];
+  readonly expandedAvailableModels?: string[];
+  readonly adminAvailableModels?: string[];
+  readonly dataRetentionModelsRegion?: string;
   readonly database: Database;
   readonly auth: Auth;
   readonly bedrockRegion: string;
@@ -131,6 +137,16 @@ export class WebSocket extends Construct {
         ENABLE_BEDROCK_CROSS_REGION_INFERENCE:
           props.enableBedrockCrossRegionInference.toString(),
         USE_STRANDS: "true",
+        GLOBAL_AVAILABLE_MODELS: props.globalAvailableModels
+          ? JSON.stringify(props.globalAvailableModels)
+          : "[]",
+        EXPANDED_AVAILABLE_MODELS: props.expandedAvailableModels
+          ? JSON.stringify(props.expandedAvailableModels)
+          : "[]",
+        ADMIN_AVAILABLE_MODELS: props.adminAvailableModels
+          ? JSON.stringify(props.adminAvailableModels)
+          : "[]",
+        DATA_RETENTION_MODELS_REGION: props.dataRetentionModelsRegion || "",
       },
       role: handlerRole,
       snapStart: props.enableLambdaSnapStart

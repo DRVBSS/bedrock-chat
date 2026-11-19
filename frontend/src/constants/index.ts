@@ -92,6 +92,7 @@ export const AVAILABLE_MODEL_KEYS = [
   'claude-v5.5-opus',
   'claude-v5.5-sonnet',
   'claude-v5.5-haiku',
+  'claude-v5.2-fable',
   'claude-v4-sonnet',
   'claude-v4.5-sonnet',
   'claude-v4.6-sonnet',
@@ -123,4 +124,12 @@ export const AVAILABLE_MODEL_KEYS = [
   'gpt-6-sol',
   'gpt-6-luna',
   'gpt-6-astra',
+  'gpt-6.2-sol',
+  'gpt-6.2-astra',
 ] as const;
+
+// Models whose provider requires AWS to retain inputs and outputs. They run in a
+// separate Region, are administrator-only, and cannot be used with a bot.
+// Keep in sync with is_data_retention_model() in backend/app/utils.py.
+export const isDataRetentionModel = (modelId: string): boolean =>
+  modelId.startsWith('gpt-6') || modelId.endsWith('-fable');

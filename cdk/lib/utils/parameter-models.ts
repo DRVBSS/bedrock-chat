@@ -116,6 +116,12 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
 
   // Additional models exposed only to users in ExpandedModelAccess.
   expandedAvailableModels: z.array(z.string()).default([]),
+  // Additional models exposed only to administrators. When empty, administrators
+  // are unrestricted (the earlier behaviour).
+  adminAvailableModels: z.array(z.string()).default([]),
+  // Region used only for models whose provider requires data retention
+  // (Claude Fable and OpenAI GPT-6). Empty keeps every model in bedrockRegion.
+  dataRetentionModelsRegion: z.string().default(""),
 
   // Default model to be selected when user first visits the app
   defaultModel: z.string().optional(),
@@ -281,6 +287,10 @@ export function resolveBedrockChatParameters(
     botStoreLanguage: app.node.tryGetContext("botStoreLanguage"),
     globalAvailableModels: app.node.tryGetContext("globalAvailableModels"),
     expandedAvailableModels: app.node.tryGetContext("expandedAvailableModels"),
+    adminAvailableModels: app.node.tryGetContext("adminAvailableModels"),
+    dataRetentionModelsRegion: app.node.tryGetContext(
+      "dataRetentionModelsRegion"
+    ),
     defaultModel: app.node.tryGetContext("defaultModel"),
     titleModel: app.node.tryGetContext("titleModel"),
     logoPath: app.node.tryGetContext("logoPath"),

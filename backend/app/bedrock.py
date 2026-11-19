@@ -22,7 +22,12 @@ from app.config import (
 from app.repositories.models.custom_bot import GenerationParamsModel
 from app.repositories.models.custom_bot_guardrails import BedrockGuardrailsModel
 from app.routes.schemas.conversation import type_model_name
-from app.utils import get_bedrock_runtime_client
+from app.utils import (
+    DATA_RETENTION_MODELS_REGION,
+    get_bedrock_region_for_model,
+    get_bedrock_runtime_client,
+    is_data_retention_model,
+)
 from app.vector_search import SearchResult
 
 from botocore.exceptions import ClientError
@@ -67,6 +72,7 @@ BASE_MODEL_IDS = {
     "claude-v5.5-opus": "anthropic.claude-opus-5-5",
     "claude-v5.5-sonnet": "anthropic.claude-sonnet-5-5",
     "claude-v5.5-haiku": "anthropic.claude-haiku-5-5",
+    "claude-v5.2-fable": "anthropic.claude-fable-5-2",
     "claude-v4-sonnet": "anthropic.claude-sonnet-4-20250514-v1:0",
     "claude-v4.5-sonnet": "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "claude-v4.6-sonnet": "anthropic.claude-sonnet-4-6",
@@ -100,10 +106,30 @@ BASE_MODEL_IDS = {
     "gpt-6-sol": "openai.gpt-6-sol",
     "gpt-6-luna": "openai.gpt-6-luna",
     "gpt-6-astra": "openai.gpt-6-astra",
+    "gpt-6.2-sol": "openai.gpt-6.2-sol",
+    "gpt-6.2-astra": "openai.gpt-6.2-astra",
 }
 
 # Global inference profiles
 GLOBAL_INFERENCE_PROFILES = {
+    "claude-v5.2-fable": {
+        "supported_regions": [
+            "us-east-2",
+            "us-east-1",
+        ]
+    },
+    "gpt-6.2-sol": {
+        "supported_regions": [
+            "us-east-2",
+            "us-east-1",
+        ]
+    },
+    "gpt-6.2-astra": {
+        "supported_regions": [
+            "us-east-2",
+            "us-east-1",
+        ]
+    },
     "claude-v5.5-sonnet": {
         "supported_regions": [
             "us-west-2",
@@ -416,6 +442,24 @@ GLOBAL_INFERENCE_PROFILES = {
 
 # Regional inference profiles
 REGIONAL_INFERENCE_PROFILES = {
+    "claude-v5.2-fable": {
+        "supported_regions": {
+            "us-east-1": "us",
+            "us-east-2": "us",
+        }
+    },
+    "gpt-6.2-sol": {
+        "supported_regions": {
+            "us-east-1": "us",
+            "us-east-2": "us",
+        }
+    },
+    "gpt-6.2-astra": {
+        "supported_regions": {
+            "us-east-1": "us",
+            "us-east-2": "us",
+        }
+    },
     "claude-v5.5-sonnet": {
         "supported_regions": {
             "us-east-1": "us",
@@ -833,6 +877,7 @@ def is_adaptive_thinking_model(model: type_model_name) -> bool:
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
     ]
@@ -847,6 +892,7 @@ def is_prefill_supported(model: type_model_name) -> bool:
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
     ]
@@ -861,6 +907,7 @@ def is_specify_both_temperature_and_top_p_supported(model: type_model_name) -> b
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
         "claude-v4.5-sonnet",
@@ -876,6 +923,7 @@ def is_top_k_supported(model: type_model_name) -> bool:
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
     ]
@@ -888,11 +936,14 @@ def is_top_p_supported(model: type_model_name) -> bool:
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-6-astra",
+        "gpt-6.2-sol",
+        "gpt-6.2-astra",
     ]
 
 
@@ -903,11 +954,14 @@ def is_temperature_supported(model: type_model_name) -> bool:
         "claude-v5.5-opus",
         "claude-v5.5-sonnet",
         "claude-v5.5-haiku",
+        "claude-v5.2-fable",
         "claude-v4.8-opus",
         "claude-v5-sonnet",
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-6-astra",
+        "gpt-6.2-sol",
+        "gpt-6.2-astra",
     ]
 
 
@@ -919,6 +973,8 @@ def is_reasoning_summary_supported(model: type_model_name) -> bool:
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-6-astra",
+        "gpt-6.2-sol",
+        "gpt-6.2-astra",
     ]
 
 
@@ -935,6 +991,7 @@ def is_prompt_caching_supported(
             "claude-v5.5-opus",
             "claude-v5.5-sonnet",
             "claude-v5.5-haiku",
+            "claude-v5.2-fable",
             "claude-v4.8-opus",
             "claude-v5-sonnet",
             "claude-v4-sonnet",
@@ -956,6 +1013,7 @@ def is_prompt_caching_supported(
             "claude-v5.5-opus",
             "claude-v5.5-sonnet",
             "claude-v5.5-haiku",
+            "claude-v5.2-fable",
             "claude-v4.8-opus",
             "claude-v5-sonnet",
             "claude-v4-sonnet",
@@ -1670,7 +1728,9 @@ def compose_args_for_converse_api(
 def call_converse_api(
     args: ConverseStreamRequestTypeDef,
 ) -> ConverseResponseTypeDef:
-    client = get_bedrock_runtime_client()
+    client = get_bedrock_runtime_client(
+        get_bedrock_region_for_model_id(args["modelId"])
+    )
     try:
         return client.converse(**args)
     except ClientError as e:
@@ -1757,15 +1817,37 @@ def get_regional_inference_profile_id(
     return f"{area}.{base_model_id}"
 
 
+def get_bedrock_region_for_model_id(model_id: str) -> str:
+    """Region for an already-resolved Bedrock model or inference profile id."""
+    for model, base_model_id in BASE_MODEL_IDS.items():
+        if model_id == base_model_id or model_id.endswith("." + base_model_id):
+            return get_bedrock_region_for_model(model)
+    return BEDROCK_REGION
+
+
 def get_model_id(
     model: type_model_name,
     enable_global: bool = ENABLE_BEDROCK_GLOBAL_INFERENCE,
     enable_cross_region: bool = ENABLE_BEDROCK_CROSS_REGION_INFERENCE,
-    bedrock_region: str = BEDROCK_REGION,
+    bedrock_region: str | None = None,
 ) -> str:
     base_model_id = BASE_MODEL_IDS.get(model)
     if not base_model_id:
         raise ValueError(f"Unsupported model: {model}")
+
+    # Models that require data retention go to their own Region when one is
+    # configured. There they use the geo profile, never the global one, so the
+    # retained content stays in that geography.
+    use_retention_region = (
+        bedrock_region is None
+        and bool(DATA_RETENTION_MODELS_REGION)
+        and is_data_retention_model(model)
+    )
+    if bedrock_region is None:
+        bedrock_region = get_bedrock_region_for_model(model)
+    if use_retention_region:
+        enable_global = False
+        enable_cross_region = True
 
     # 1. First, try to use global inference profile if enabled and available
     if enable_global:

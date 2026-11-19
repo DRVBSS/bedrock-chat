@@ -6,6 +6,8 @@ const translation = {
       },
     },
     app: {
+      dataRetentionNotice:
+        'No patient data (PHI). AWS keeps content sent to this model for up to 30 days.',
       name: 'Bedrock Chat',
       inputMessage: 'How can I Help You?',
       myBots: 'My Bots',
@@ -69,6 +71,10 @@ const translation = {
         label: 'Claude 5.5 (Haiku)',
         description:
           'Fastest, most efficient Claude 5.5 model for high-volume, latency-sensitive work.',
+      },
+      'claude-v5.2-fable': {
+        label: 'Claude Fable 5.2',
+        description: "Anthropic's most capable generally available model.",
       },
       'claude-v4-sonnet': {
         label: 'Claude 4 (Sonnet)',
@@ -221,6 +227,14 @@ const translation = {
       'gpt-6-astra': {
         label: 'GPT-6 Astra',
         description: 'OpenAI GPT-6 Astra. Accepts text and image input.',
+      },
+      'gpt-6.2-sol': {
+        label: 'GPT-6.2 Sol',
+        description: 'OpenAI GPT-6.2 Sol. Accepts text and image input.',
+      },
+      'gpt-6.2-astra': {
+        label: 'GPT-6.2 Astra',
+        description: 'OpenAI GPT-6.2 Astra. Accepts text and image input.',
       },
     },
     agent: {

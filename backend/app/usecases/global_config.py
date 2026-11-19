@@ -4,12 +4,14 @@ import os
 
 from app.routes.schemas.conversation import type_model_name
 from app.user import User
+from app.utils import is_data_retention_model
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 GLOBAL_AVAILABLE_MODELS = os.environ.get("GLOBAL_AVAILABLE_MODELS")
 EXPANDED_AVAILABLE_MODELS = os.environ.get("EXPANDED_AVAILABLE_MODELS")
+ADMIN_AVAILABLE_MODELS = os.environ.get("ADMIN_AVAILABLE_MODELS")
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL")
 TITLE_MODEL = os.environ.get("TITLE_MODEL")
 LOGO_PATH = os.environ.get("LOGO_PATH", "")
@@ -63,6 +65,26 @@ def get_expanded_available_models() -> list[str]:
         return []
 
 
+def get_admin_available_models() -> list[str]:
+    """Return the additional models shown only to administrators.
+
+    An empty list keeps the earlier behaviour: administrators are unrestricted.
+    """
+    if not ADMIN_AVAILABLE_MODELS:
+        return []
+    try:
+        models = json.loads(ADMIN_AVAILABLE_MODELS)
+        if not isinstance(models, list):
+            logger.error(
+                f"ADMIN_AVAILABLE_MODELS must be a JSON array, got {type(models)}"
+            )
+            return []
+        return [model for model in models if model and isinstance(model, str)]
+    except json.JSONDecodeError:
+        logger.error("Failed to parse ADMIN_AVAILABLE_MODELS as JSON")
+        return []
+
+
 def get_available_models_for_user(user: User | None) -> list[str]:
     """Return the model allowlist for a user.
 
@@ -71,23 +93,58 @@ def get_available_models_for_user(user: User | None) -> list[str]:
     all other callers receive the configured employee allowlist.
     """
     if user is not None and user.is_admin():
-        logger.info("Admin user has unrestricted model access")
-        return []
+        admin_models = get_admin_available_models()
+        if not admin_models:
+            logger.info("Admin user has unrestricted model access")
+            return []
+        # A curated administrator menu: everything employees can use, plus the
+        # administrator-only additions.
+        return list(
+            dict.fromkeys(
+                [
+                    *get_global_available_models(),
+                    *get_expanded_available_models(),
+                    *admin_models,
+                ]
+            )
+        )
 
-    base_models = get_global_available_models()
+    # Models that require data retention are administrator-only, whatever the
+    # configured lists say.
+    base_models = [
+        model
+        for model in get_global_available_models()
+        if not is_data_retention_model(model)
+    ]
     if user is None or not user.has_expanded_model_access() or not base_models:
         return base_models
 
     # Preserve menu order and avoid duplicate entries when a model is present in
     # both the employee and expanded lists.
-    return list(dict.fromkeys([*base_models, *get_expanded_available_models()]))
+    expanded_models = [
+        model
+        for model in get_expanded_available_models()
+        if not is_data_retention_model(model)
+    ]
+    return list(dict.fromkeys([*base_models, *expanded_models]))
 
 
 def ensure_model_available_for_user(user: User, model: str) -> None:
     """Reject attempts to use a model outside the user's server-side allowlist."""
+    if is_data_retention_model(model) and not user.is_admin():
+        raise PermissionError("The selected model is not available for this user.")
     available_models = get_available_models_for_user(user)
     if available_models and model not in available_models:
         raise PermissionError("The selected model is not available for this user.")
+
+
+def ensure_model_allowed_with_bot(model: str, bot_id: str | None) -> None:
+    """Models that require data retention must not receive a bot's instructions
+    or knowledge-base content, so they are limited to plain conversations."""
+    if bot_id is not None and is_data_retention_model(model):
+        raise PermissionError(
+            "This model keeps content under AWS data retention and cannot be used with a bot."
+        )
 
 
 def get_default_model() -> type_model_name:

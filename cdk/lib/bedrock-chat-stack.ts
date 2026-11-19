@@ -54,6 +54,8 @@ export interface BedrockChatStackProps extends StackProps {
   readonly botStoreLanguage: Language;
   readonly globalAvailableModels?: string[];
   readonly expandedAvailableModels?: string[];
+  readonly adminAvailableModels?: string[];
+  readonly dataRetentionModelsRegion?: string;
   readonly defaultModel?: string;
   readonly titleModel?: string;
   readonly tokenValidMinutes: number;
@@ -256,6 +258,8 @@ export class BedrockChatStack extends cdk.Stack {
       openSearchEndpoint: botStore?.openSearchEndpoint,
       globalAvailableModels: props.globalAvailableModels,
       expandedAvailableModels: props.expandedAvailableModels,
+      adminAvailableModels: props.adminAvailableModels,
+      dataRetentionModelsRegion: props.dataRetentionModelsRegion,
       defaultModel: props.defaultModel,
       titleModel: props.titleModel,
       logoPath: props.logoPath,
@@ -311,6 +315,10 @@ export class BedrockChatStack extends cdk.Stack {
       enableBedrockCrossRegionInference:
         props.enableBedrockCrossRegionInference,
       enableLambdaSnapStart: props.enableLambdaSnapStart,
+      globalAvailableModels: props.globalAvailableModels,
+      expandedAvailableModels: props.expandedAvailableModels,
+      adminAvailableModels: props.adminAvailableModels,
+      dataRetentionModelsRegion: props.dataRetentionModelsRegion,
     });
     frontend.buildViteApp({
       backendApiEndpoint: backendApi.api.apiEndpoint,

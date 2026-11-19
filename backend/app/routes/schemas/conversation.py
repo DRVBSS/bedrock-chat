@@ -16,6 +16,7 @@ type_model_name = Literal[
     "claude-v5.5-opus",
     "claude-v5.5-sonnet",
     "claude-v5.5-haiku",
+    "claude-v5.2-fable",
     "claude-v4-sonnet",
     "claude-v4.5-sonnet",
     "claude-v4.6-sonnet",
@@ -52,6 +53,8 @@ type_model_name = Literal[
     "gpt-6-sol",
     "gpt-6-luna",
     "gpt-6-astra",
+    "gpt-6.2-sol",
+    "gpt-6.2-astra",
 ]
 
 

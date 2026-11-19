@@ -6,6 +6,7 @@ import logging
 import os
 
 from app.bedrock import is_reasoning_summary_supported
+from app.utils import get_bedrock_region_for_model
 from app.repositories.models.conversation import type_model_name
 from app.repositories.models.custom_bot import BotModel, GenerationParamsModel
 from app.repositories.models.custom_bot_guardrails import BedrockGuardrailsModel
@@ -66,7 +67,7 @@ def create_strands_agent(
     )
     logger.debug(f"[AGENT_FACTORY] Model config: {model_config}")
     model = BedrockModel(
-        region_name=BEDROCK_REGION,
+        region_name=get_bedrock_region_for_model(model_name),
         **model_config,
     )
 

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Model } from '../@types/conversation';
 import { ModelItem } from '../@types/global-config';
-import { AVAILABLE_MODEL_KEYS } from '../constants/index';
+import { AVAILABLE_MODEL_KEYS, isDataRetentionModel } from '../constants/index';
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useLocalStorage from './useLocalStorage';
@@ -158,6 +158,13 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
         modelId: 'claude-v5.5-haiku',
         label: t('model.claude-v5.5-haiku.label'),
         description: t('model.claude-v5.5-haiku.description'),
+        supportMediaType: CLAUDE_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true,
+      },
+      {
+        modelId: 'claude-v5.2-fable',
+        label: t('model.claude-v5.2-fable.label'),
+        description: t('model.claude-v5.2-fable.description'),
         supportMediaType: CLAUDE_SUPPORTED_MEDIA_TYPES,
         supportReasoning: true,
       },
@@ -359,6 +366,20 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
         supportMediaType: OPENAI_GPT_6_SUPPORTED_MEDIA_TYPES,
         supportReasoning: true, // Shows the reasoning summary (reasoning.summary).
       },
+      {
+        modelId: 'gpt-6.2-sol',
+        label: t('model.gpt-6.2-sol.label'),
+        description: t('model.gpt-6.2-sol.description'),
+        supportMediaType: OPENAI_GPT_6_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true, // Shows the reasoning summary (reasoning.summary).
+      },
+      {
+        modelId: 'gpt-6.2-astra',
+        label: t('model.gpt-6.2-astra.label'),
+        description: t('model.gpt-6.2-astra.description'),
+        supportMediaType: OPENAI_GPT_6_SUPPORTED_MEDIA_TYPES,
+        supportReasoning: true, // Shows the reasoning summary (reasoning.summary).
+      },
       // Mistral
       {
         modelId: 'mistral-7b-instruct',
@@ -388,18 +409,34 @@ const useModel = (botId?: string | null, activeModels?: ActiveModels) => {
         supportMediaType: [],
         supportReasoning: false,
       },
-    ].filter((model) => {
-      // Filter based on global configuration if available
-      if (
-        globalConfig?.globalAvailableModels &&
-        globalConfig.globalAvailableModels.length > 0
-      ) {
-        return globalConfig.globalAvailableModels.includes(model.modelId);
-      }
-      // If no global config, show all models
-      return true;
-    }) as ModelItem[];
-  }, [t, globalConfig]);
+    ]
+      .map((model) =>
+        // Mark models that require data retention in every language, since the
+        // per-model strings are not translated everywhere.
+        isDataRetentionModel(model.modelId)
+          ? {
+              ...model,
+              label: `${model.label} (no PHI)`,
+              description: `${t('app.dataRetentionNotice')} ${model.description}`,
+            }
+          : model
+      )
+      .filter((model) => {
+        // Models that require data retention are never offered inside a bot.
+        if (botId && isDataRetentionModel(model.modelId)) {
+          return false;
+        }
+        // Filter based on global configuration if available
+        if (
+          globalConfig?.globalAvailableModels &&
+          globalConfig.globalAvailableModels.length > 0
+        ) {
+          return globalConfig.globalAvailableModels.includes(model.modelId);
+        }
+        // If no global config, show all models
+        return true;
+      }) as ModelItem[];
+  }, [t, globalConfig, botId]);
 
   const [filteredModels, setFilteredModels] = useState(availableModels);
   const { modelId, setModelId } = useModelState();

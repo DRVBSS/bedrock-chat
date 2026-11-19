@@ -20,6 +20,7 @@ from app.bedrock import (
     call_converse_api,
     compose_args_for_converse_api,
     generation_params_to_converse_configuration,
+    get_bedrock_region_for_model_id,
     get_model_id,
     is_temperature_supported,
     is_top_k_supported,
@@ -303,13 +304,108 @@ class TestGetModelId(unittest.TestCase):
                 )
 
 
+class TestDataRetentionModelRouting(unittest.TestCase):
+    """Claude Fable and GPT-6 go to a separate Region when one is configured."""
+
+    RETENTION_MODELS = [
+        ("claude-v5.2-fable", "anthropic.claude-fable-5-2"),
+        ("gpt-6-sol", "openai.gpt-6-sol"),
+        ("gpt-6.2-sol", "openai.gpt-6.2-sol"),
+        ("gpt-6.2-astra", "openai.gpt-6.2-astra"),
+    ]
+
+    def test_classification(self):
+        from app.utils import is_data_retention_model
+
+        for model, _ in self.RETENTION_MODELS:
+            self.assertTrue(is_data_retention_model(model), model)
+        for model in [
+            "claude-v5.5-opus",
+            "claude-v5.5-sonnet",
+            "claude-v4.8-opus",
+            "gpt-oss-120b",
+            "grok-4.6",
+            "amazon-nova-pro",
+        ]:
+            self.assertFalse(is_data_retention_model(model), model)
+
+    def test_without_a_retention_region_nothing_changes(self):
+        from app import utils
+
+        with patch.object(utils, "DATA_RETENTION_MODELS_REGION", ""):
+            self.assertEqual(
+                utils.get_bedrock_region_for_model("claude-v5.2-fable"),
+                utils.BEDROCK_REGION,
+            )
+
+    def test_retention_models_use_the_retention_region_and_geo_profile(self):
+        from app import bedrock, utils
+
+        with patch.object(
+            utils, "DATA_RETENTION_MODELS_REGION", "us-east-2"
+        ), patch.object(bedrock, "DATA_RETENTION_MODELS_REGION", "us-east-2"):
+            for model, base_model_id in self.RETENTION_MODELS:
+                with self.subTest(model=model):
+                    self.assertEqual(
+                        utils.get_bedrock_region_for_model(model), "us-east-2"
+                    )
+                    # Global inference is on, but the geo profile is used so the
+                    # retained content stays in the US.
+                    model_id = get_model_id(
+                        model,  # type: ignore[arg-type]
+                        enable_global=True,
+                        enable_cross_region=False,
+                    )
+                    self.assertEqual(model_id, f"us.{base_model_id}")
+                    self.assertEqual(
+                        get_bedrock_region_for_model_id(model_id), "us-east-2"
+                    )
+
+    def test_other_models_stay_in_the_normal_region(self):
+        from app import bedrock, utils
+
+        with patch.object(
+            utils, "DATA_RETENTION_MODELS_REGION", "us-east-2"
+        ), patch.object(bedrock, "DATA_RETENTION_MODELS_REGION", "us-east-2"):
+            for model in ["claude-v5.5-sonnet", "claude-v4.8-opus", "gpt-oss-120b"]:
+                with self.subTest(model=model):
+                    self.assertEqual(
+                        utils.get_bedrock_region_for_model(model),
+                        utils.BEDROCK_REGION,
+                    )
+                    self.assertEqual(
+                        get_bedrock_region_for_model_id(
+                            get_model_id(model)  # type: ignore[arg-type]
+                        ),
+                        utils.BEDROCK_REGION,
+                    )
+
+    def test_fable_omits_sampling_params(self):
+        for enable_reasoning in [False, True]:
+            with self.subTest(enable_reasoning=enable_reasoning):
+                config = generation_params_to_converse_configuration(
+                    "claude-v5.2-fable", enable_reasoning=enable_reasoning
+                )
+                self.assertNotIn("temperature", config["inferenceConfig"])
+                self.assertNotIn("topP", config["inferenceConfig"])
+                self.assertNotIn(
+                    "top_k", config.get("additionalModelRequestFields", {})
+                )
+
+
 class TestOpenAIGpt6Params(unittest.TestCase):
     def test_no_temperature_top_p_or_stop_sequences(self):
         """GPT-6 returns 400 for temperature, topP and stopSequences.
         The reasoning toggle asks for a reasoning summary instead of redacted content.
         """
         summary = {"additionalModelRequestFields": {"reasoning": {"summary": "auto"}}}
-        for model in ["gpt-6-sol", "gpt-6-luna", "gpt-6-astra"]:
+        for model in [
+            "gpt-6-sol",
+            "gpt-6-luna",
+            "gpt-6-astra",
+            "gpt-6.2-sol",
+            "gpt-6.2-astra",
+        ]:
             for enable_reasoning in [False, True]:
                 with self.subTest(model=model, enable_reasoning=enable_reasoning):
                     config = generation_params_to_converse_configuration(

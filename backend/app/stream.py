@@ -4,6 +4,7 @@ from typing import Callable, NotRequired, TypedDict, TypeGuard
 
 from app.agents.tools.agent_tool import AgentTool
 from app.bedrock import (
+    get_bedrock_region_for_model_id,
     BedrockThrottlingException,
     calculate_price,
     compose_args_for_converse_api,
@@ -194,7 +195,9 @@ class ConverseApiStreamHandler:
             )
             logger.info(f"args for converse_stream: {args}")
 
-            client = get_bedrock_runtime_client()
+            client = get_bedrock_runtime_client(
+                get_bedrock_region_for_model_id(args["modelId"])
+            )
             try:
                 response = client.converse_stream(**args)
             except ClientError as e:

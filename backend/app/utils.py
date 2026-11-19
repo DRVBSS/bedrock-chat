@@ -16,6 +16,13 @@ logger.setLevel(logging.INFO)
 REGION = os.environ.get("REGION", "us-east-1")
 BEDROCK_REGION = os.environ.get("BEDROCK_REGION", "us-east-1")
 ENV_NAME = os.environ.get("ENV_NAME", "default")
+# Region used only for models whose provider requires AWS to retain inputs and
+# outputs (see "Amazon Bedrock abuse detection"). Those models are rejected in a
+# Region whose data retention mode is `none`, so they are sent here instead and
+# every other model keeps using BEDROCK_REGION. Empty disables the second Region.
+DATA_RETENTION_MODELS_REGION = os.environ.get(
+    "DATA_RETENTION_MODELS_REGION", ""
+).strip()
 
 logger.debug(f"REGION: {REGION}")
 logger.debug(f"BEDROCK_REGION: {BEDROCK_REGION}")
@@ -35,6 +42,19 @@ def snake_to_camel(snake_str):
 
 def is_running_on_lambda():
     return "AWS_EXECUTION_ENV" in os.environ
+
+
+def is_data_retention_model(model: str) -> bool:
+    """True for models that require data retention: Claude Fable and OpenAI GPT-6."""
+    return model.startswith("gpt-6") or model.endswith("-fable")
+
+
+def get_bedrock_region_for_model(model: str) -> str:
+    """Region to invoke `model` in: the retention Region for retention models
+    when one is configured, otherwise the normal Bedrock Region."""
+    if DATA_RETENTION_MODELS_REGION and is_data_retention_model(model):
+        return DATA_RETENTION_MODELS_REGION
+    return BEDROCK_REGION
 
 
 def get_bedrock_client(region=BEDROCK_REGION):

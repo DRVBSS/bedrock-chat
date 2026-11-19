@@ -9,6 +9,8 @@ const translation: typeof en = {
       },
     },
     app: {
+      dataRetentionNotice:
+        '患者情報（PHI）は入力しないでください。このモデルに送信した内容はAWSが最大30日間保持します。',
       name: 'Bedrock Chat',
       inputMessage: 'お手伝いできることはありますか？',
       myBots: 'マイボット',
@@ -40,8 +42,7 @@ const translation: typeof en = {
       },
       'claude-v4.1-opus': {
         label: 'Claude 4.1 (Opus)',
-        description:
-          '推論能力が向上した高性能なOpusモデル。',
+        description: '推論能力が向上した高性能なOpusモデル。',
       },
       'claude-v4.5-opus': {
         label: 'Claude 4.5 (Opus)',
@@ -72,6 +73,10 @@ const translation: typeof en = {
         label: 'Claude 5.5 (Haiku)',
         description:
           '大量処理や低レイテンシが求められる用途向けの、Claude 5.5ファミリーで最速かつ最も効率的なモデル。',
+      },
+      'claude-v5.2-fable': {
+        label: 'Claude Fable 5.2',
+        description: 'Anthropicの一般提供モデルの中で最も高性能なモデル。',
       },
       'claude-v4-sonnet': {
         label: 'Claude 4 (Sonnet)',
@@ -221,6 +226,14 @@ const translation: typeof en = {
       'gpt-6-astra': {
         label: 'GPT-6 Astra',
         description: 'OpenAI GPT-6 Astra。テキストと画像の入力に対応',
+      },
+      'gpt-6.2-sol': {
+        label: 'GPT-6.2 Sol',
+        description: 'OpenAI GPT-6.2 Sol。テキストと画像の入力に対応',
+      },
+      'gpt-6.2-astra': {
+        label: 'GPT-6.2 Astra',
+        description: 'OpenAI GPT-6.2 Astra。テキストと画像の入力に対応',
       },
     },
     agent: {

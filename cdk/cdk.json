@@ -79,16 +79,28 @@
     "enableBotStoreReplicas": false,
     "botStoreLanguage": "en",
     "globalAvailableModels": [
-      "claude-v5-sonnet",
-      "claude-v4.8-opus",
-      "claude-v4.5-haiku"
+      "claude-v5.5-sonnet",
+      "claude-v5.5-opus",
+      "claude-v5.5-haiku"
     ],
     "expandedAvailableModels": [
       "grok-4.6",
       "llama4-scout-17b-instruct",
       "llama4-maverick-17b-instruct"
     ],
-    "defaultModel": "claude-v5-sonnet",
+    "adminAvailableModels": [
+      "claude-v4.8-opus",
+      "claude-v5-sonnet",
+      "amazon-nova-pro",
+      "claude-v5.2-fable",
+      "gpt-6.2-sol",
+      "gpt-6.2-astra",
+      "gpt-6-sol",
+      "gpt-6-luna",
+      "gpt-6-astra"
+    ],
+    "dataRetentionModelsRegion": "us-east-2",
+    "defaultModel": "claude-v5.5-sonnet",
     "titleModel": "claude-v4.5-haiku",
     "tokenValidMinutes": 30,
     "alternateDomainName": "",

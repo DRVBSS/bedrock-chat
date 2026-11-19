@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from app.usecases import global_config
 from app.usecases.global_config import (
+    ensure_model_allowed_with_bot,
     ensure_model_available_for_user,
     get_available_models_for_user,
     get_expanded_available_models,
@@ -355,3 +356,107 @@ class TestGetTitleModel(unittest.TestCase):
 
         result = get_title_model()
         self.assertEqual(result, "llama3-3-70b-instruct")
+
+
+STAFF_MODELS = '["claude-v5.5-sonnet", "claude-v5.5-opus", "claude-v5.5-haiku"]'
+EXPANDED_MODELS = (
+    '["grok-4.6", "llama4-scout-17b-instruct", "llama4-maverick-17b-instruct"]'
+)
+ADMIN_MODELS = '["claude-v4.8-opus", "claude-v5.2-fable", "gpt-6.2-sol"]'
+
+
+class TestAdminAvailableModels(unittest.TestCase):
+    """A configured administrator list replaces unrestricted administrator access."""
+
+    @patch.object(global_config, "ADMIN_AVAILABLE_MODELS", ADMIN_MODELS)
+    @patch.object(global_config, "EXPANDED_AVAILABLE_MODELS", EXPANDED_MODELS)
+    @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", STAFF_MODELS)
+    def test_admin_receives_staff_expanded_and_admin_models(self):
+        result = get_available_models_for_user(create_test_admin_user("dimitri"))
+        self.assertEqual(
+            result,
+            [
+                "claude-v5.5-sonnet",
+                "claude-v5.5-opus",
+                "claude-v5.5-haiku",
+                "grok-4.6",
+                "llama4-scout-17b-instruct",
+                "llama4-maverick-17b-instruct",
+                "claude-v4.8-opus",
+                "claude-v5.2-fable",
+                "gpt-6.2-sol",
+            ],
+        )
+
+    @patch.object(global_config, "ADMIN_AVAILABLE_MODELS", ADMIN_MODELS)
+    @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", STAFF_MODELS)
+    def test_admin_cannot_use_model_outside_curated_list(self):
+        with self.assertRaises(PermissionError):
+            ensure_model_available_for_user(
+                create_test_admin_user("dimitri"), "claude-v3-opus"
+            )
+
+    @patch.object(global_config, "ADMIN_AVAILABLE_MODELS", "[]")
+    @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", STAFF_MODELS)
+    def test_empty_admin_list_keeps_admin_unrestricted(self):
+        result = get_available_models_for_user(create_test_admin_user("dimitri"))
+        self.assertEqual(result, [])
+
+    @patch.object(global_config, "ADMIN_AVAILABLE_MODELS", "not json")
+    @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", STAFF_MODELS)
+    def test_invalid_admin_list_keeps_admin_unrestricted(self):
+        result = get_available_models_for_user(create_test_admin_user("dimitri"))
+        self.assertEqual(result, [])
+
+    @patch.object(global_config, "ADMIN_AVAILABLE_MODELS", ADMIN_MODELS)
+    @patch.object(global_config, "GLOBAL_AVAILABLE_MODELS", STAFF_MODELS)
+    def test_staff_do_not_receive_admin_models(self):
+        result = get_available_models_for_user(create_test_user("employee"))
+        self.assertEqual(
+            result, ["claude-v5.5-sonnet", "claude-v5.5-opus", "claude-v5.5-haiku"]
+        )
+
+
+class TestDataRetentionModelAccess(unittest.TestCase):
+    """Models that require data retention are administrator-only and bot-free."""
+
+    @patch.object(
+        global_config,
+        "EXPANDED_AVAILABLE_MODELS",
+        '["grok-4.6", "gpt-6.2-sol"]',
+    )
+    @patch.object(
+        global_config,
+        "GLOBAL_AVAILABLE_MODELS",
+        '["claude-v5.5-sonnet", "claude-v5.2-fable"]',
+    )
+    def test_retention_models_are_removed_from_staff_lists(self):
+        user = create_test_user("employee")
+        user.groups.append("ExpandedModelAccess")
+        self.assertEqual(
+            get_available_models_for_user(user), ["claude-v5.5-sonnet", "grok-4.6"]
+        )
+
+    def test_staff_cannot_use_retention_model_even_without_any_list(self):
+        for model in ["claude-v5.2-fable", "gpt-6-sol", "gpt-6.2-astra"]:
+            with self.subTest(model=model):
+                with self.assertRaises(PermissionError):
+                    ensure_model_available_for_user(create_test_user("employee"), model)
+
+    def test_admin_can_use_retention_model(self):
+        ensure_model_available_for_user(
+            create_test_admin_user("dimitri"), "claude-v5.2-fable"
+        )
+
+    def test_retention_model_is_refused_with_a_bot(self):
+        with self.assertRaises(PermissionError):
+            ensure_model_allowed_with_bot("gpt-6.2-sol", "some-bot-id")
+        with self.assertRaises(PermissionError):
+            ensure_model_allowed_with_bot("claude-v5.2-fable", "some-bot-id")
+
+    def test_retention_model_is_allowed_without_a_bot(self):
+        ensure_model_allowed_with_bot("claude-v5.2-fable", None)
+
+    def test_other_models_are_allowed_with_a_bot(self):
+        ensure_model_allowed_with_bot("claude-v5.5-sonnet", "some-bot-id")
+        ensure_model_allowed_with_bot("gpt-oss-120b", "some-bot-id")
